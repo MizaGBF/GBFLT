@@ -6,7 +6,7 @@ import json
 from tkinter import messagebox
 
 class Interface(Tk.Tk):
-    VERSION_STRING = "1.2"
+    VERSION_STRING = "1.3"
     CHESTS = ["wood", "silver", "gold", "red", "blue", "purple"] # chest list
     def __init__(self):
         Tk.Tk.__init__(self,None)
@@ -18,6 +18,7 @@ class Interface(Tk.Tk):
         self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
         self.assets = {} # contains loaded images
         self.raid_data = {} # contains the layout
+        self.got_chest = {} # dict of raid with a chest button, and their chest button name
         self.add = True # True: +1, False: -1
         self.modified = False # if True, need to save
         data, errors = self.load_raids()
@@ -50,20 +51,29 @@ class Interface(Tk.Tk):
                     label = Tk.Label(sub, text="0") # Total label
                     label.grid(row=1, column=0)
                     self.raid_data[rn][""] = [0, label] # the "" key is used for the total
-                    
-                    has_chest = False
+                    # check for chest in the list
+                    chest = None
+                    for l in r.get("loot", []):
+                        if l.replace(".png", "") in self.CHESTS:
+                            chest = l
+                            self.got_chest[rn] = chest
+                            break
+                    # texts
+                    Tk.Label(sub, text="Total").grid(row=2, column=0)
+                    if chest is not None: Tk.Label(sub, text="Chest").grid(row=3, column=0)
+                    # build button and label list
                     for i, l in enumerate(r.get("loot", [])):
+                        if l.endswith(".png"): l = l[:-3] # strip extension to avoid possible weird behaviors
                         if l in self.raid_data[rn]:
-                            errors.append("Raid {} '{}': '{}' is present twice".format(c, rn, l))
+                            errors.append("Raid {} '{}': '{}' is present twice in the loot list".format(c, rn, l))
                             continue
                         elif l == "":
                             errors.append("Raid {} '{}': Skipped an empty string".format(c, rn))
                             continue
-                        elif has_chest and l.replace(".png", "") in self.CHESTS:
+                        elif l in self.CHESTS and l != chest:
                             errors.append("Raid {} '{}': Only one chest button supported per raid".format(c, rn))
                             continue
-                        if l.replace(".png", "") in self.CHESTS: has_chest = True
-                        asset = self.load_asset("assets/buttons/" + l.replace(".png", "") + ".png")
+                        asset = self.load_asset("assets/buttons/" + l + ".png")
                         if asset is None: asset = Tk.PhotoImage(width=50, height=50)
                         button = Tk.Button(sub, image=asset, text="", command=lambda rn=rn, l=l: self.count(rn, l))
                         button.grid(row=0, column=i+1)
@@ -72,9 +82,12 @@ class Interface(Tk.Tk):
                         d[1].grid(row=1, column=i+1)
                         d[2] = Tk.Label(sub, text="0%")
                         d[2].grid(row=2, column=i+1)
+                        if chest is not None and l != chest:
+                            d.append(Tk.Label(sub, text="0%"))
+                            d[3].grid(row=3, column=i+1)
                         self.raid_data[rn][l] = d
                     button = Tk.Button(sub, text="Reset", command=lambda rn=rn: self.reset(rn)) # reset button for the tab
-                    button.grid(row=3, column=0, sticky="we")
+                    button.grid(row=4, column=0, sticky="we")
             raid_tabs.pack(expand=1, fill="both")
         self.top_tab.grid(row=0, column=0, columnspan=10, sticky="wnes")
         button = Tk.Button(self, text="Toggle", command=self.toggle) # toggle button
@@ -152,6 +165,9 @@ class Interface(Tk.Tk):
     def update_label(self, rname : str): # raid name
         if rname in self.raid_data:
             total = self.raid_data[rname][""][0]
+            chest_count = 0
+            if rname in self.got_chest: # get total of chest
+                chest_count = self.raid_data[rname][self.got_chest[rname]][0]
             self.raid_data[rname][""][1].config(text =str(total))
             for k, v in self.raid_data[rname].items():
                 if k == "": continue
@@ -161,6 +177,11 @@ class Interface(Tk.Tk):
                     v[2].config(text="{:.1f}%".format(100*float(i)/total).replace('.0', ''))
                 else:
                     v[2].config(text="0%")
+                if rname in self.got_chest and len(v) == 4: # chest %
+                    if chest_count > 0:
+                        v[3].config(text="{:.1f}%".format(100*float(v[0])/chest_count).replace('.0', ''))
+                    else:
+                        v[3].config(text="0%")
 
     def toggle(self): # toggle add/substract
         if self.add:
