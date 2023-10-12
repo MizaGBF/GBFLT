@@ -31,7 +31,7 @@ The JSON structure is the following:
                 - "raid_image": Must match an image file from the `assets/tabs` and `assets/buttons` folder.  
                 - "text": The name of the raid to be displayed on the Tab. This name is also used in the save data.  
                 - "loot": A list of strings:
-                    - Each string must match a file name found in `assets/buttons`. No need to put the file extension. No duplicates allowed. Those strings are also used in the save data.  
+                    - Each string must match a file name found in `assets/buttons`. No need to put the file extension. No duplicates allowed. Only one chest allowed max. Those strings are also used in the save data.  
 
 Images must have the following format:  
 `assets/tabs`: 20x20 pixels, PNG format.  
