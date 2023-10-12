@@ -178,12 +178,12 @@ class Interface(Tk.Tk):
                 i = v[0]
                 v[1].config(text =str(i))
                 if total > 0:
-                    v[2].config(text="{:.2f}%".format(100*float(i)/total).replace('.0', ''))
+                    v[2].config(text="{:.2f}%".format(100*float(i)/total).replace('.00', ''))
                 else:
                     v[2].config(text="0%")
                 if rname in self.got_chest and len(v) == 4: # chest %
                     if chest_count > 0:
-                        v[3].config(text="{:.1f}%".format(100*float(v[0])/chest_count).replace('.0', ''))
+                        v[3].config(text="{:.2f}%".format(100*float(v[0])/chest_count).replace('.00', ''))
                     else:
                         v[3].config(text="0%")
 
