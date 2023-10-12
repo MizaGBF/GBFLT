@@ -6,7 +6,7 @@ import json
 from tkinter import messagebox
 
 class Interface(Tk.Tk):
-    VERSION_STRING = "1.0"
+    VERSION_STRING = "1.1"
     def __init__(self):
         Tk.Tk.__init__(self,None)
         self.parent = None
@@ -169,6 +169,7 @@ class Interface(Tk.Tk):
             return errors
         missing = False
         for k, v in savedata.items():
+            if k == "version": continue
             for x, y in v.items():
                 if k in self.raid_data and x in self.raid_data[k]:
                     self.raid_data[k][x][0] = y
@@ -181,8 +182,8 @@ class Interface(Tk.Tk):
 
     def save(self):
         if self.modified:
-            self.modified = True
-            savedata = {}
+            self.modified = False
+            savedata = {"version":self.VERSION_STRING}
             for k, v in self.raid_data.items():
                 savedata[k] = {}
                 for x, y in v.items():
