@@ -6,8 +6,9 @@ import json
 from tkinter import messagebox
 
 class Interface(Tk.Tk):
-    VERSION_STRING = "1.3"
+    VERSION_STRING = "1.4"
     CHESTS = ["wood", "silver", "gold", "red", "blue", "purple"] # chest list
+    FORBIDDEN = ["version"] # forbidden raid name list
     def __init__(self):
         Tk.Tk.__init__(self,None)
         self.parent = None
@@ -37,55 +38,58 @@ class Interface(Tk.Tk):
                 elif r["text"] in self.raid_data:
                     errors.append("Duplicate raid name: {}".format(r["text"]))
                 else:
-                    self.raid_data[r["text"]] = {}
                     rn = r["text"]
-                    sub = ttk.Frame(raid_tabs)
-                    raid_tabs.add(sub, text=rn)
-                    asset = self.load_asset("assets/tabs/" + r.get("raid_image", "").replace(".png", "") + ".png")
-                    if asset is not None:
-                        raid_tabs.tab(sub, image=asset, compound=Tk.LEFT)
-                    asset = self.load_asset("assets/buttons/" + r.get("raid_image", "").replace(".png", "") + ".png")
-                    if asset is None: asset = Tk.PhotoImage(width=50, height=50) # make a dummy 50x50 image if it couldn't load one
-                    button = Tk.Button(sub, image=asset, text="", command=lambda rn=rn: self.count(rn, ""))
-                    button.grid(row=0, column=0)
-                    label = Tk.Label(sub, text="0") # Total label
-                    label.grid(row=1, column=0)
-                    self.raid_data[rn][""] = [0, label] # the "" key is used for the total
-                    # check for chest in the list
-                    chest = None
-                    for l in r.get("loot", []):
-                        if l.replace(".png", "") in self.CHESTS:
-                            chest = l
-                            self.got_chest[rn] = chest
-                            break
-                    # texts
-                    Tk.Label(sub, text="Total").grid(row=2, column=0)
-                    if chest is not None: Tk.Label(sub, text="Chest").grid(row=3, column=0)
-                    # build button and label list
-                    for i, l in enumerate(r.get("loot", [])):
-                        if l.endswith(".png"): l = l[:-3] # strip extension to avoid possible weird behaviors
-                        if l in self.raid_data[rn]:
-                            errors.append("Raid {} '{}': '{}' is present twice in the loot list".format(c, rn, l))
-                            continue
-                        elif l == "":
-                            errors.append("Raid {} '{}': Skipped an empty string".format(c, rn))
-                            continue
-                        elif l in self.CHESTS and l != chest:
-                            errors.append("Raid {} '{}': Only one chest button supported per raid".format(c, rn))
-                            continue
-                        asset = self.load_asset("assets/buttons/" + l + ".png")
-                        if asset is None: asset = Tk.PhotoImage(width=50, height=50)
-                        button = Tk.Button(sub, image=asset, text="", command=lambda rn=rn, l=l: self.count(rn, l))
-                        button.grid(row=0, column=i+1)
-                        d = [0, None, None] # other buttons got two labels (count and percent)
-                        d[1] = Tk.Label(sub, text="0")
-                        d[1].grid(row=1, column=i+1)
-                        d[2] = Tk.Label(sub, text="0%")
-                        d[2].grid(row=2, column=i+1)
-                        if chest is not None and l != chest:
-                            d.append(Tk.Label(sub, text="0%"))
-                            d[3].grid(row=3, column=i+1)
-                        self.raid_data[rn][l] = d
+                    if rn in self.FORBIDDEN:
+                        errors.append("Raid name {} is forbidden".format(rn))
+                    else:
+                        self.raid_data[r["text"]] = {}
+                        sub = ttk.Frame(raid_tabs)
+                        raid_tabs.add(sub, text=rn)
+                        asset = self.load_asset("assets/tabs/" + r.get("raid_image", "").replace(".png", "") + ".png")
+                        if asset is not None:
+                            raid_tabs.tab(sub, image=asset, compound=Tk.LEFT)
+                        asset = self.load_asset("assets/buttons/" + r.get("raid_image", "").replace(".png", "") + ".png")
+                        if asset is None: asset = Tk.PhotoImage(width=50, height=50) # make a dummy 50x50 image if it couldn't load one
+                        button = Tk.Button(sub, image=asset, text="", command=lambda rn=rn: self.count(rn, ""))
+                        button.grid(row=0, column=0)
+                        label = Tk.Label(sub, text="0") # Total label
+                        label.grid(row=1, column=0)
+                        self.raid_data[rn][""] = [0, label] # the "" key is used for the total
+                        # check for chest in the list
+                        chest = None
+                        for l in r.get("loot", []):
+                            if l.replace(".png", "") in self.CHESTS:
+                                chest = l
+                                self.got_chest[rn] = chest
+                                break
+                        # texts
+                        Tk.Label(sub, text="Total").grid(row=2, column=0)
+                        if chest is not None: Tk.Label(sub, text="Chest").grid(row=3, column=0)
+                        # build button and label list
+                        for i, l in enumerate(r.get("loot", [])):
+                            if l.endswith(".png"): l = l[:-3] # strip extension to avoid possible weird behaviors
+                            if l in self.raid_data[rn]:
+                                errors.append("Raid {} '{}': '{}' is present twice in the loot list".format(c, rn, l))
+                                continue
+                            elif l == "":
+                                errors.append("Raid {} '{}': Skipped an empty string".format(c, rn))
+                                continue
+                            elif l in self.CHESTS and l != chest:
+                                errors.append("Raid {} '{}': Only one chest button supported per raid".format(c, rn))
+                                continue
+                            asset = self.load_asset("assets/buttons/" + l + ".png")
+                            if asset is None: asset = Tk.PhotoImage(width=50, height=50)
+                            button = Tk.Button(sub, image=asset, text="", command=lambda rn=rn, l=l: self.count(rn, l))
+                            button.grid(row=0, column=i+1)
+                            d = [0, None, None] # other buttons got two labels (count and percent)
+                            d[1] = Tk.Label(sub, text="0")
+                            d[1].grid(row=1, column=i+1)
+                            d[2] = Tk.Label(sub, text="0%")
+                            d[2].grid(row=2, column=i+1)
+                            if chest is not None and l != chest:
+                                d.append(Tk.Label(sub, text="0%"))
+                                d[3].grid(row=3, column=i+1)
+                            self.raid_data[rn][l] = d
                     button = Tk.Button(sub, text="Reset", command=lambda rn=rn: self.reset(rn)) # reset button for the tab
                     button.grid(row=4, column=0, sticky="we")
             raid_tabs.pack(expand=1, fill="both")
@@ -174,7 +178,7 @@ class Interface(Tk.Tk):
                 i = v[0]
                 v[1].config(text =str(i))
                 if total > 0:
-                    v[2].config(text="{:.1f}%".format(100*float(i)/total).replace('.0', ''))
+                    v[2].config(text="{:.2f}%".format(100*float(i)/total).replace('.0', ''))
                 else:
                     v[2].config(text="0%")
                 if rname in self.got_chest and len(v) == 4: # chest %
