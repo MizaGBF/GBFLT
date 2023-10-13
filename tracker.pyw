@@ -6,9 +6,9 @@ import json
 from tkinter import messagebox
 
 class Interface(Tk.Tk):
-    VERSION_STRING = "1.4"
+    VERSION_STRING = "1.5"
     CHESTS = ["wood", "silver", "gold", "red", "blue", "purple"] # chest list
-    FORBIDDEN = ["version"] # forbidden raid name list
+    FORBIDDEN = ["version", "last"] # forbidden raid name list
     def __init__(self):
         Tk.Tk.__init__(self,None)
         self.parent = None
@@ -21,11 +21,13 @@ class Interface(Tk.Tk):
         self.raid_data = {} # contains the layout
         self.got_chest = {} # dict of raid with a chest button, and their chest button name
         self.add = True # True: +1, False: -1
+        self.last_tab = None # track the last tab used
         self.modified = False # if True, need to save
         data, errors = self.load_raids()
         
+        tab_tree = {} # used to memorize the tab structure, to set the active tab after loading
         self.top_tab = ttk.Notebook(self)
-        for t in data: # top tabs
+        for ti, t in enumerate(data): # top tabs
             tab = ttk.Frame(self.top_tab)
             self.top_tab.add(tab, text=t.get("text", ""))
             asset = self.load_asset("assets/tabs/" + t.get("tab_image", "").replace(".png", "") + ".png")
@@ -42,7 +44,8 @@ class Interface(Tk.Tk):
                     if rn in self.FORBIDDEN:
                         errors.append("Raid name {} is forbidden".format(rn))
                     else:
-                        self.raid_data[r["text"]] = {}
+                        tab_tree[rn] = (ti, c, raid_tabs)
+                        self.raid_data[rn] = {}
                         sub = ttk.Frame(raid_tabs)
                         raid_tabs.add(sub, text=rn)
                         asset = self.load_asset("assets/tabs/" + r.get("raid_image", "").replace(".png", "") + ".png")
@@ -99,6 +102,10 @@ class Interface(Tk.Tk):
         self.add_mode = Tk.Label(self, text="Add", background='#c7edcd') # add/substract label
         self.add_mode.grid(row=1, column=1, sticky="w")
         errors = errors + self.load()
+        if self.last_tab is not None:
+            t = tab_tree[self.last_tab]
+            self.top_tab.select(t[0]) # select top tab
+            t[2].select(t[1]) # select sub tab on stored notebook
         if len(errors) > 0:
             if len(errors) > 6:
                 errors = errors[:6] + ["And {} more errors...".format(len(errors)-6)]
@@ -138,6 +145,7 @@ class Interface(Tk.Tk):
 
     def count(self, rname : str, target : str): # add/substract a value. take raid name and button target (will be empty string if it's the total button) as parameters
         if rname in self.raid_data:
+            self.last_tab = rname
             if target != "" and target in self.raid_data[rname]:
                 if self.add:
                     self.raid_data[rname][target][0] += 1
@@ -161,6 +169,7 @@ class Interface(Tk.Tk):
 
     def reset(self, rname : str): # raid name
         if rname in self.raid_data:
+            self.last_tab = rname
             for k in self.raid_data[rname]:
                 self.raid_data[rname][k][0] = 0
             self.modified = True
@@ -207,8 +216,9 @@ class Interface(Tk.Tk):
                 errors.append("Error while opening save.json: " + str(e))
             return errors
         missing = False
+        self.last_tab = savedata.get("last", None)
         for k, v in savedata.items(): # set each raid
-            if k == "version": continue
+            if k in self.FORBIDDEN: continue
             for x, y in v.items():
                 if k in self.raid_data and x in self.raid_data[k]:
                     self.raid_data[k][x][0] = y
@@ -222,7 +232,7 @@ class Interface(Tk.Tk):
     def save(self): # save
         if self.modified:
             self.modified = False
-            savedata = {"version":self.VERSION_STRING} # version string in case I change the format later, for retrocompatibility and stuff
+            savedata = {"version":self.VERSION_STRING, "last":self.last_tab} # version string in case I change the format later, for retrocompatibility and stuff
             for k, v in self.raid_data.items():
                 savedata[k] = {}
                 for x, y in v.items():
