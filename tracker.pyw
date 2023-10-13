@@ -102,7 +102,7 @@ class Interface(Tk.Tk):
         self.add_mode = Tk.Label(self, text="Add", background='#c7edcd') # add/substract label
         self.add_mode.grid(row=1, column=1, sticky="w")
         errors = errors + self.load()
-        if self.last_tab is not None:
+        if self.last_tab in tab_tree:
             t = tab_tree[self.last_tab]
             self.top_tab.select(t[0]) # select top tab
             t[2].select(t[1]) # select sub tab on stored notebook
