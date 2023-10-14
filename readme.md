@@ -8,9 +8,11 @@
   
 ### Usage  
 * Simply double-click on `tracker.pyw`, assuming Python is installed correctly.  
-* Click on a button to increase the counter.  
+* Left Click on a button to increase the counter.  
+* Right Click on a button to decrease the counter.  
 * The reset button will reset the current tab.  
-* You can use the toggle button to switch to the "Substract" mode and make counters decrease.  
+* The raid buttons modify the total raid done. It's also modified if another item is modified.  
+* The chest buttons (if present) modify the total chest obtained. It's also modified if another item is modified.  
 * The values are saved every minute or on exit, if they have been modified.  
   
 ### Bug?  
