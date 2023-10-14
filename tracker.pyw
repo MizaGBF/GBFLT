@@ -142,7 +142,7 @@ class Interface(Tk.Tk):
             errors = ["Error in raids.json: " + str(e)]
         return data, errors
 
-    def count(self, rname : str, target : str, add : bool): # add/substract a value. take raid name, button target (will be empty string if it's the total button) and a boolean as parameters
+    def count(self, rname : str, target : str, add : bool): # add/substract a value. Parameters: raid name, button target (will be empty string if it's the total button) and a boolean to control the addition/substraction
         if rname in self.raid_data:
             self.last_tab = rname
             if target != "" and target in self.raid_data[rname]:
@@ -168,7 +168,7 @@ class Interface(Tk.Tk):
 
     def reset(self, rname : str): # raid name
         message = Tk.messagebox.askquestion(title="Reset", message="Do you want to reset this tab?") #ask for confirmation to avoid  accidental data reset
-        if message == "yes":        
+        if message == "yes":
               if rname in self.raid_data:
                  self.last_tab = rname
                  for k in self.raid_data[rname]:
