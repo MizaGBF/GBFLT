@@ -6,7 +6,7 @@ import json
 from tkinter import messagebox
 
 class Interface(Tk.Tk):
-    VERSION_STRING = "1.5"
+    VERSION_STRING = "1.6"
     CHESTS = ["wood", "silver", "gold", "red", "blue", "purple"] # chest list
     FORBIDDEN = ["version", "last"] # forbidden raid name list
     def __init__(self):
@@ -20,7 +20,6 @@ class Interface(Tk.Tk):
         self.assets = {} # contains loaded images
         self.raid_data = {} # contains the layout
         self.got_chest = {} # dict of raid with a chest button, and their chest button name
-        self.add = True # True: +1, False: -1
         self.last_tab = None # track the last tab used
         self.modified = False # if True, need to save
         data, errors = self.load_raids()
@@ -53,8 +52,10 @@ class Interface(Tk.Tk):
                             raid_tabs.tab(sub, image=asset, compound=Tk.LEFT)
                         asset = self.load_asset("assets/buttons/" + r.get("raid_image", "").replace(".png", "") + ".png")
                         if asset is None: asset = Tk.PhotoImage(width=50, height=50) # make a dummy 50x50 image if it couldn't load one
-                        button = Tk.Button(sub, image=asset, text="", command=lambda rn=rn: self.count(rn, ""))
+                        button = Tk.Button(sub, image=asset, text="")
                         button.grid(row=0, column=0)
+                        button.bind('<Button-1>', lambda ev, rn=rn: self.count(rn, "", add=True))
+                        button.bind('<Button-3>', lambda ev, rn=rn: self.count(rn, "", add=False))						
                         label = Tk.Label(sub, text="0") # Total label
                         label.grid(row=1, column=0)
                         self.raid_data[rn][""] = [0, label] # the "" key is used for the total
@@ -82,8 +83,10 @@ class Interface(Tk.Tk):
                                 continue
                             asset = self.load_asset("assets/buttons/" + l + ".png")
                             if asset is None: asset = Tk.PhotoImage(width=50, height=50)
-                            button = Tk.Button(sub, image=asset, text="", command=lambda rn=rn, l=l: self.count(rn, l))
+                            button = Tk.Button(sub, image=asset, text="")
                             button.grid(row=0, column=i+1)
+                            button.bind('<Button-1>', lambda ev, rn=rn, l=l: self.count(rn, l, add=True))
+                            button.bind('<Button-3>', lambda ev, rn=rn, l=l: self.count(rn, l, add=False))
                             d = [0, None, None] # other buttons got two labels (count and percent)
                             d[1] = Tk.Label(sub, text="0")
                             d[1].grid(row=1, column=i+1)
@@ -97,10 +100,6 @@ class Interface(Tk.Tk):
                     button.grid(row=4, column=0, sticky="we")
             raid_tabs.pack(expand=1, fill="both")
         self.top_tab.grid(row=0, column=0, columnspan=10, sticky="wnes")
-        button = Tk.Button(self, text="Toggle", command=self.toggle) # toggle button
-        button.grid(row=1, column=0, sticky="we")
-        self.add_mode = Tk.Label(self, text="Add", background='#c7edcd') # add/substract label
-        self.add_mode.grid(row=1, column=1, sticky="w")
         errors = errors + self.load()
         if self.last_tab in tab_tree:
             t = tab_tree[self.last_tab]
@@ -143,11 +142,11 @@ class Interface(Tk.Tk):
             errors = ["Error in raids.json: " + str(e)]
         return data, errors
 
-    def count(self, rname : str, target : str): # add/substract a value. take raid name and button target (will be empty string if it's the total button) as parameters
+    def count(self, rname : str, target : str, add : bool): # add/substract a value. Parameters: raid name, button target (will be empty string if it's the total button) and a boolean to control the addition/substraction
         if rname in self.raid_data:
             self.last_tab = rname
             if target != "" and target in self.raid_data[rname]:
-                if self.add:
+                if add:
                     self.raid_data[rname][target][0] += 1
                 else:
                     if self.raid_data[rname][target][0] == 0: return # if at zero, return now
@@ -155,12 +154,12 @@ class Interface(Tk.Tk):
                 if target.replace(".png", "") not in self.CHESTS: # if we haven't pressed a chest button or the total button, we increase the chest value
                     for k in self.raid_data[rname]:
                         if k in self.CHESTS:
-                            if self.add:
+                            if add:
                                 self.raid_data[rname][k][0] += 1
                             else:
                                 self.raid_data[rname][k][0] = max(0, self.raid_data[rname][k][0] - 1)
             # total button
-            if self.add:
+            if add:
                 self.raid_data[rname][""][0] += 1
             else:
                 self.raid_data[rname][""][0] = max(0, self.raid_data[rname][""][0] - 1)
@@ -168,12 +167,14 @@ class Interface(Tk.Tk):
             self.update_label(rname) # update the labels for this raid
 
     def reset(self, rname : str): # raid name
-        if rname in self.raid_data:
-            self.last_tab = rname
-            for k in self.raid_data[rname]:
-                self.raid_data[rname][k][0] = 0
-            self.modified = True
-            self.update_label(rname)
+        message = Tk.messagebox.askquestion(title="Reset", message="Do you want to reset this tab?") #ask for confirmation to avoid  accidental data reset
+        if message == "yes":
+              if rname in self.raid_data:
+                 self.last_tab = rname
+                 for k in self.raid_data[rname]:
+                     self.raid_data[rname][k][0] = 0
+                 self.modified = True
+                 self.update_label(rname)
 
     def update_label(self, rname : str): # raid name
         if rname in self.raid_data:
@@ -196,13 +197,6 @@ class Interface(Tk.Tk):
                     else:
                         v[3].config(text="0%")
 
-    def toggle(self): # toggle add/substract
-        if self.add:
-            self.add_mode.config(text="Substract", background='#edc7c7')
-            self.add = False
-        else:
-            self.add_mode.config(text="Add", background='#c7edcd')
-            self.add = True
 
     def load(self): # load save.data, return an error list
         errors = []
