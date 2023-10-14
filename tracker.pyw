@@ -175,8 +175,6 @@ class Interface(Tk.Tk):
                      self.raid_data[rname][k][0] = 0
                  self.modified = True
                  self.update_label(rname)
-        else:
-            return
 
     def update_label(self, rname : str): # raid name
         if rname in self.raid_data:
