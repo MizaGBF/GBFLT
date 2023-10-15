@@ -6,7 +6,7 @@ import json
 from tkinter import messagebox
 
 class Interface(Tk.Tk):
-    VERSION_STRING = "1.6"
+    VERSION_STRING = "1.7"
     CHESTS = ["wood", "silver", "gold", "red", "blue", "purple"] # chest list
     FORBIDDEN = ["version", "last"] # forbidden raid name list
     def __init__(self):
@@ -145,23 +145,32 @@ class Interface(Tk.Tk):
     def count(self, rname : str, target : str, add : bool): # add/substract a value. Parameters: raid name, button target (will be empty string if it's the total button) and a boolean to control the addition/substraction
         if rname in self.raid_data:
             self.last_tab = rname
+            cname = self.got_chest.get(rname, None) # chest name
+            if not add: # only for substraction: take note of total normal item
+                total_item = 0
+                for k in self.raid_data[rname]:
+                    if k == "" or k.replace(".png", "")  == cname:
+                        pass
+                    else:
+                        total_item += self.raid_data[rname][k][0]
             if target != "" and target in self.raid_data[rname]:
                 if add:
                     self.raid_data[rname][target][0] += 1
                 else:
-                    if self.raid_data[rname][target][0] == 0: return # if at zero, return now
+                    if (target.replace(".png", "") == cname and self.raid_data[rname][target][0] <= total_item) or self.raid_data[rname][target][0] == 0: return # can't decreased if it's a chest button and its value is equal to total of other items OR if its value is simply ZERO
                     self.raid_data[rname][target][0] = self.raid_data[rname][target][0] - 1
-                if target.replace(".png", "") not in self.CHESTS: # if we haven't pressed a chest button or the total button, we increase the chest value
-                    for k in self.raid_data[rname]:
-                        if k in self.CHESTS:
-                            if add:
-                                self.raid_data[rname][k][0] += 1
-                            else:
-                                self.raid_data[rname][k][0] = max(0, self.raid_data[rname][k][0] - 1)
+                if target.replace(".png", "") != cname: # if we haven't pressed the chest button or the total button, we increase the chest value
+                    if cname not in self.raid_data[rname]: cname += ".png" # in case the user added the extension
+                    if cname in self.raid_data[rname]: # check again
+                        if add:
+                            self.raid_data[rname][cname][0] += 1
+                        else:
+                            self.raid_data[rname][cname][0] = max(0, self.raid_data[rname][cname][0] - 1)
             # total button
             if add:
                 self.raid_data[rname][""][0] += 1
             else:
+                if target == "" and self.raid_data[rname][""][0] <= total_item: return
                 self.raid_data[rname][""][0] = max(0, self.raid_data[rname][""][0] - 1)
             self.modified = True
             self.update_label(rname) # update the labels for this raid
@@ -188,12 +197,12 @@ class Interface(Tk.Tk):
                 i = v[0]
                 v[1].config(text =str(i))
                 if total > 0:
-                    v[2].config(text="{:.2f}%".format(100*float(i)/total).replace('.00', ''))
+                    v[2].config(text="{:.2f}%".format(min(100, 100*float(i)/total)).replace('.00', ''))
                 else:
                     v[2].config(text="0%")
                 if rname in self.got_chest and len(v) == 4: # chest %
                     if chest_count > 0:
-                        v[3].config(text="{:.2f}%".format(100*float(v[0])/chest_count).replace('.00', ''))
+                        v[3].config(text="{:.2f}%".format(min(100, 100*float(v[0])/chest_count)).replace('.00', ''))
                     else:
                         v[3].config(text="0%")
 
