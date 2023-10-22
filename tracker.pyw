@@ -6,7 +6,7 @@ import json
 from tkinter import messagebox
 
 class Interface(Tk.Tk):
-    VERSION_STRING = "1.7"
+    VERSION_STRING = "1.8"
     CHESTS = ["wood", "silver", "gold", "red", "blue", "purple"] # chest list
     FORBIDDEN = ["version", "last"] # forbidden raid name list
     def __init__(self):
@@ -29,9 +29,8 @@ class Interface(Tk.Tk):
         for ti, t in enumerate(data): # top tabs
             tab = ttk.Frame(self.top_tab)
             self.top_tab.add(tab, text=t.get("text", ""))
-            asset = self.load_asset("assets/tabs/" + t.get("tab_image", "").replace(".png", "") + ".png")
-            if asset is not None:
-                self.top_tab.tab(tab, image=asset, compound=Tk.LEFT)
+            asset = self.load_asset("assets/tabs/" + t.get("tab_image", "").replace(".png", "") + ".png", (20, 20))
+            self.top_tab.tab(tab, image=asset, compound=Tk.LEFT)
             raid_tabs = ttk.Notebook(tab)
             for c, r in enumerate(t.get("raids", [])): # raid tabs
                 if "text" not in r:
@@ -47,15 +46,13 @@ class Interface(Tk.Tk):
                         self.raid_data[rn] = {}
                         sub = ttk.Frame(raid_tabs)
                         raid_tabs.add(sub, text=rn)
-                        asset = self.load_asset("assets/tabs/" + r.get("raid_image", "").replace(".png", "") + ".png")
-                        if asset is not None:
-                            raid_tabs.tab(sub, image=asset, compound=Tk.LEFT)
-                        asset = self.load_asset("assets/buttons/" + r.get("raid_image", "").replace(".png", "") + ".png")
-                        if asset is None: asset = Tk.PhotoImage(width=50, height=50) # make a dummy 50x50 image if it couldn't load one
+                        asset = self.load_asset("assets/tabs/" + r.get("raid_image", "").replace(".png", "") + ".png", (20, 20))
+                        raid_tabs.tab(sub, image=asset, compound=Tk.LEFT)
+                        asset = self.load_asset("assets/buttons/" + r.get("raid_image", "").replace(".png", "") + ".png", (50, 50))
                         button = Tk.Button(sub, image=asset, text="")
                         button.grid(row=0, column=0)
                         button.bind('<Button-1>', lambda ev, rn=rn: self.count(rn, "", add=True))
-                        button.bind('<Button-3>', lambda ev, rn=rn: self.count(rn, "", add=False))						
+                        button.bind('<Button-3>', lambda ev, rn=rn: self.count(rn, "", add=False))
                         label = Tk.Label(sub, text="0") # Total label
                         label.grid(row=1, column=0)
                         self.raid_data[rn][""] = [0, label] # the "" key is used for the total
@@ -81,8 +78,7 @@ class Interface(Tk.Tk):
                             elif l in self.CHESTS and l != chest:
                                 errors.append("Raid {} '{}': Only one chest button supported per raid".format(c, rn))
                                 continue
-                            asset = self.load_asset("assets/buttons/" + l + ".png")
-                            if asset is None: asset = Tk.PhotoImage(width=50, height=50)
+                            asset = self.load_asset("assets/buttons/" + l + ".png", (50, 50))
                             button = Tk.Button(sub, image=asset, text="")
                             button.grid(row=0, column=i+1)
                             button.bind('<Button-1>', lambda ev, rn=rn, l=l: self.count(rn, l, add=True))
@@ -110,13 +106,20 @@ class Interface(Tk.Tk):
                 errors = errors[:6] + ["And {} more errors...".format(len(errors)-6)]
             messagebox.showerror("Important", "The following occured during startup:\n- " + "\n- ".join(errors) + "\n\nIt's recommended to close the app and fix those issues.")
 
-    def load_asset(self, path : str): # load an image file (if not loaded) and return it
+    def load_asset(self, path : str, size : tuple = None): # load an image file (if not loaded) and return it. If error/not found, return None or an empty image of specified size
         try:
             if path not in self.assets:
                 self.assets[path] = PhotoImage(file=path)
             return self.assets[path]
         except:
-            return None
+            if size is None:
+                return None
+            else:
+                try: 
+                    if '__dummy_photo_image__'+str(size) not in self.assets: # keep a reference or it won't work
+                        self.assets['__dummy_photo_image__'+str(size)] = Tk.PhotoImage(width=size[0], height=size[1])
+                    return self.assets['__dummy_photo_image__'+str(size)]
+                except: pass
 
     def run(self): # main loop
         count = 0
