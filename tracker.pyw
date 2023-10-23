@@ -231,7 +231,7 @@ class Interface(Tk.Tk):
                 else:
                     if not missing:
                         missing = True
-                        errors.append("Values from save.json don't seem in use anymore and will be discarded (Example: {}/{})".format(k, x)) # warning
+                        errors.append("Values from save.json don't seem in use anymore and will be discarded (Example: {})".format(k)) # warning
             self.update_label(k)
         return errors
 

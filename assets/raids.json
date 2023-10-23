@@ -117,6 +117,13 @@
                 "loot":[
                     "sand"
                 ]
+            },
+            {
+                "raid_image":"hexa",
+                "text":"Hexa",
+                "loot":[
+                    "sand"
+                ]
             }
         ]
     }
