@@ -6,7 +6,7 @@ import json
 from tkinter import messagebox
 
 class Interface(Tk.Tk):
-    VERSION_STRING = "1.8"
+    VERSION_STRING = "1.9"
     CHESTS = ["wood", "silver", "gold", "red", "blue", "purple"] # chest list
     FORBIDDEN = ["version", "last"] # forbidden raid name list
     def __init__(self):
@@ -162,7 +162,7 @@ class Interface(Tk.Tk):
                 else:
                     if (target.replace(".png", "") == cname and self.raid_data[rname][target][0] <= total_item) or self.raid_data[rname][target][0] == 0: return # can't decreased if it's a chest button and its value is equal to total of other items OR if its value is simply ZERO
                     self.raid_data[rname][target][0] = self.raid_data[rname][target][0] - 1
-                if target.replace(".png", "") != cname: # if we haven't pressed the chest button or the total button, we increase the chest value
+                if cname is not None and target.replace(".png", "") != cname: # if we haven't pressed the chest button or the total button, we increase the chest value
                     if cname not in self.raid_data[rname]: cname += ".png" # in case the user added the extension
                     if cname in self.raid_data[rname]: # check again
                         if add:
