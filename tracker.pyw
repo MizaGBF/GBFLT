@@ -4,16 +4,26 @@ from tkinter import PhotoImage
 import time
 import json
 from tkinter import messagebox
+import urllib.request
+import webbrowser
 
 class Interface(Tk.Tk):
-    VERSION_STRING = "1.9"
     CHESTS = ["wood", "silver", "gold", "red", "blue", "purple"] # chest list
-    FORBIDDEN = ["version", "last"] # forbidden raid name list
+    FORBIDDEN = ["version", "last", "settings"] # forbidden raid name list
+    THEME = ["light", "dark"]
     def __init__(self):
         Tk.Tk.__init__(self,None)
         self.parent = None
         self.apprunning = True
-        self.title("GBF Loot Tracker v" + self.VERSION_STRING)
+        self.version = "0.0"
+        errors = self.load_manifest()
+        savedata, rerrors = self.load_savedata()
+        errors += rerrors
+        self.settings = {} if savedata is None else savedata.get("settings", {})
+        self.current_theme = self.settings.get("theme", self.THEME[0])
+        self.call('source', 'assets/themes/main.tcl')
+        self.call("set_theme", self.current_theme)
+        self.title("GBF Loot Tracker v" + self.version)
         self.iconbitmap('assets/icon.ico')
         self.resizable(width=False, height=False) # not resizable
         self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
@@ -22,7 +32,8 @@ class Interface(Tk.Tk):
         self.got_chest = {} # dict of raid with a chest button, and their chest button name
         self.last_tab = None # track the last tab used
         self.modified = False # if True, need to save
-        data, errors = self.load_raids()
+        data, rerrors = self.load_raids()
+        errors += rerrors
         
         tab_tree = {} # used to memorize the tab structure, to set the active tab after loading
         self.top_tab = ttk.Notebook(self)
@@ -92,11 +103,26 @@ class Interface(Tk.Tk):
                                 d.append(Tk.Label(sub, text="0%"))
                                 d[3].grid(row=3, column=i+1)
                             self.raid_data[rn][l] = d
-                    button = Tk.Button(sub, text="Reset", command=lambda rn=rn: self.reset(rn)) # reset button for the tab
-                    button.grid(row=4, column=0, sticky="we")
+                    asset = self.load_asset("assets/others/reset.png", (20, 20))
+                    button = Tk.Button(sub, image=asset, text="Reset", compound=Tk.LEFT, command=lambda rn=rn: self.reset(rn)) # reset button for the tab
+                    button.grid(row=4, column=0, sticky="w", columnspan=3)
             raid_tabs.pack(expand=1, fill="both")
+        # settings
+        tab = ttk.Frame(self.top_tab)
+        self.top_tab.add(tab, text="Settings")
+        asset = self.load_asset("assets/others/settings.png", (20, 20))
+        self.top_tab.tab(tab, image=asset, compound=Tk.LEFT)
+        raid_tabs = ttk.Notebook(tab)
+        asset = self.load_asset("assets/others/theme.png", (20, 20))
+        button = Tk.Button(tab, image=asset, text="Toggle Theme", compound=Tk.LEFT, command=self.toggle_theme)
+        button.grid(row=0, column=0, columnspan=3, sticky="we")
+        self.check_update = Tk.IntVar()
+        ttk.Checkbutton(tab, text='Check for updates', variable=self.check_update, command=self.toggle_checkupdate).grid(row=1, column=0, sticky="we")
+        self.check_update.set(self.settings.get("check_update", 0))
+        
+        # end
         self.top_tab.grid(row=0, column=0, columnspan=10, sticky="wnes")
-        errors = errors + self.load()
+        if savedata is not None: self.apply_savedata(savedata)
         if self.last_tab in tab_tree:
             t = tab_tree[self.last_tab]
             self.top_tab.select(t[0]) # select top tab
@@ -105,6 +131,8 @@ class Interface(Tk.Tk):
             if len(errors) > 6:
                 errors = errors[:6] + ["And {} more errors...".format(len(errors)-6)]
             messagebox.showerror("Important", "The following occured during startup:\n- " + "\n- ".join(errors) + "\n\nIt's recommended to close the app and fix those issues.")
+        elif self.settings.get("check_update", 0) == 1:
+            self.check_new_update()
 
     def load_asset(self, path : str, size : tuple = None): # load an image file (if not loaded) and return it. If error/not found, return None or an empty image of specified size
         try:
@@ -144,6 +172,24 @@ class Interface(Tk.Tk):
             data = []
             errors = ["Error in raids.json: " + str(e)]
         return data, errors
+
+    def toggle_checkupdate(self): # toggle check for update option
+        self.modified = True
+        self.settings["check_update"] = self.check_update.get()
+
+    def toggle_theme(self): # toggle the theme
+        match self.current_theme:
+            case "light":
+                self.call("set_theme", self.THEME[1])
+                self.current_theme = self.THEME[1]
+                self.modified = True
+            case "dark":
+                self.call("set_theme", self.THEME[0])
+                self.current_theme = self.THEME[0]
+                self.modified = True
+            case _: # in case the user modified the application to use a custom theme
+                messagebox.showerror("Error", "The current theme in use seems to be custom and can't be modified.")
+        self.settings["theme"] = self.current_theme
 
     def count(self, rname : str, target : str, add : bool): # add/substract a value. Parameters: raid name, button target (will be empty string if it's the total button) and a boolean to control the addition/substraction
         if rname in self.raid_data:
@@ -209,18 +255,47 @@ class Interface(Tk.Tk):
                     else:
                         v[3].config(text="0%")
 
+    def cmpVer(self, mver, tver): # compare version strings, True if mver greater or equal, else False
+        me = mver.split('.')
+        te = tver.split('.')
+        for i in range(0, min(len(me), len(te))):
+            if int(me[i]) < int(te[i]):
+                return False
+        return True
 
-    def load(self): # load save.data, return an error list
+    def check_new_update(self): # request the manifest file on github and compare the versions
+        try:
+            with urllib.request.urlopen("https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/manifest.json") as url:
+                data = json.loads(url.read().decode("utf-8"))
+            if "version" in data and self.version != "0.0" and self.cmpVer(data["version"], self.version):
+                if Tk.messagebox.askquestion(title="Update", message="An update is available.\nCurrent version: {}\nNew Version: {}\nOpen the Github page?".format(self.version, data["version"])) == "yes":
+                    webbrowser.open("https://github.com/MizaGBF/GBFLT", new=2, autoraise=True)
+        except:
+            pass
+
+    def load_manifest(self): # load data from manifest.json (only the version number for now)
+        try:
+            with open("assets/manifest.json", mode="r", encoding="utf-8") as f:
+                self.version = json.load(f)["version"]
+            return []
+        except:
+            return ["Couldn't open 'assets/manifest.json'"]
+
+    def load_savedata(self): # load save.data, return a tuple of the savedata (None if error) and an error list
         errors = []
         try:
             with open("save.json", mode="r", encoding="utf-8") as f:
                 savedata = json.load(f)
             print("save.json loaded")
+            return savedata, []
         except Exception as e:
             print(e)
             if "No such file or directory" not in str(e):
                 errors.append("Error while opening save.json: " + str(e))
-            return errors
+            return None, errors
+
+    def apply_savedata(self, savedata): # set raid labels, etc...
+        errors = []
         missing = False
         self.last_tab = savedata.get("last", None)
         for k, v in savedata.items(): # set each raid
@@ -238,7 +313,7 @@ class Interface(Tk.Tk):
     def save(self): # save
         if self.modified:
             self.modified = False
-            savedata = {"version":self.VERSION_STRING, "last":self.last_tab} # version string in case I change the format later, for retrocompatibility and stuff
+            savedata = {"version":self.version, "last":self.last_tab, "settings":self.settings} # version string in case I change the format later, for retrocompatibility and stuff
             for k, v in self.raid_data.items():
                 savedata[k] = {}
                 for x, y in v.items():

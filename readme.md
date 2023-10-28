@@ -3,8 +3,13 @@
 ![Preview](https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/preview.png)
 
 ### Installation  
-* You only need Python 3 installed (It has been confirmed to work on Python 3.11 and higher).  
-* Nothing else required.  
+* You only need [Python 3](https://www.python.org/downloads/) installed (It has been confirmed to work on Python 3.11 and higher).  
+
+### Features  
+* Lightweight.  
+* No third-party dependencies required.  
+* Light and Dark themes based on [the Azure TTK Theme](https://github.com/rdbende/Azure-ttk-theme).  
+* Customizable layout.  
   
 ### Usage  
 * Simply double-click on `tracker.pyw`, assuming Python is installed correctly.  
