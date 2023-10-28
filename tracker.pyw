@@ -259,7 +259,6 @@ class Interface(Tk.Tk):
         me = mver.split('.')
         te = tver.split('.')
         for i in range(0, min(len(me), len(te))):
-            print(me[i], te[i])
             if int(me[i]) < int(te[i]):
                 return False
         return True
