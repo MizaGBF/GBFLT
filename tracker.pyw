@@ -259,6 +259,7 @@ class Interface(Tk.Tk):
         me = mver.split('.')
         te = tver.split('.')
         for i in range(0, min(len(me), len(te))):
+            print(me[i], te[i])
             if int(me[i]) < int(te[i]):
                 return False
         return True
@@ -267,7 +268,7 @@ class Interface(Tk.Tk):
         try:
             with urllib.request.urlopen("https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/manifest.json") as url:
                 data = json.loads(url.read().decode("utf-8"))
-            if "version" in data and self.version != "0.0" and self.cmpVer(data["version"], self.version):
+            if "version" in data and self.version != "0.0" and not self.cmpVer(self.version, data["version"]):
                 if Tk.messagebox.askquestion(title="Update", message="An update is available.\nCurrent version: {}\nNew Version: {}\nOpen the Github page?".format(self.version, data["version"])) == "yes":
                     webbrowser.open("https://github.com/MizaGBF/GBFLT", new=2, autoraise=True)
         except:
