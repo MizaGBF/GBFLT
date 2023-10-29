@@ -142,6 +142,7 @@ class Interface(Tk.Tk):
             messagebox.showerror("Important", "The following occured during startup:\n- " + "\n- ".join(errors) + "\n\nIt's recommended to close the app and fix those issues.")
         elif self.settings.get("check_update", 0) == 1:
             self.check_new_update()
+        self.last_savedata_string = str(self.get_save_data()) # get current state of the save as a string
 
     def load_asset(self, path : str, size : tuple = None): # load an image file (if not loaded) and return it. If error/not found, return None or an empty image of specified size
         try:
@@ -323,18 +324,25 @@ class Interface(Tk.Tk):
     def save(self): # save
         if self.modified:
             self.modified = False
-            savedata = {"version":self.version, "last":self.last_tab, "settings":self.settings} # version string in case I change the format later, for retrocompatibility and stuff
-            for k, v in self.raid_data.items():
-                savedata[k] = {}
-                for x, y in v.items():
-                    savedata[k][x] = y[0]
-            try:
-                with open("save.json", mode="w", encoding="utf-8") as f:
-                    json.dump(savedata, f)
-                print("save.json updated")
-            except Exception as e:
-                print(e)
-                messagebox.showerror("Error", "An error occured while saving:\n"+str(e))
+            savedata = self.get_save_data()
+            savedata_string = str(savedata)
+            if savedata_string != self.last_savedata_string:
+                self.last_savedata_string = savedata_string
+                try:
+                    with open("save.json", mode="w", encoding="utf-8") as f:
+                        json.dump(savedata, f)
+                    print("save.json updated")
+                except Exception as e:
+                    print(e)
+                    messagebox.showerror("Error", "An error occured while saving:\n"+str(e))
+
+    def get_save_data(self):
+        savedata = {"version":self.version, "last":self.last_tab, "settings":self.settings} # version string in case I change the format later, for retrocompatibility and stuff
+        for k, v in self.raid_data.items():
+            savedata[k] = {}
+            for x, y in v.items():
+                savedata[k][x] = y[0]
+        return savedata
 
 if __name__ == "__main__": # entry point
     Interface().run()
