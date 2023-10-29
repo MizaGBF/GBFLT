@@ -6,6 +6,15 @@ import json
 from tkinter import messagebox
 import urllib.request
 import webbrowser
+from contextlib import contextmanager
+
+@contextmanager
+def button_press(button): # context used for count(), to activate the button animation when right clicking
+    button.config(relief=Tk.SUNKEN, state=Tk.ACTIVE)
+    try:
+        yield button
+    finally:
+        button.after(100, lambda: button.config(relief=Tk.RAISED, state=Tk.NORMAL))
 
 class Interface(Tk.Tk):
     CHESTS = ["wood", "silver", "gold", "red", "blue", "purple"] # chest list
@@ -62,8 +71,8 @@ class Interface(Tk.Tk):
                         asset = self.load_asset("assets/buttons/" + r.get("raid_image", "").replace(".png", "") + ".png", (50, 50))
                         button = Tk.Button(sub, image=asset, text="")
                         button.grid(row=0, column=0)
-                        button.bind('<Button-1>', lambda ev, rn=rn: self.count(rn, "", add=True))
-                        button.bind('<Button-3>', lambda ev, rn=rn: self.count(rn, "", add=False))
+                        button.bind('<Button-1>', lambda ev, btn=button, rn=rn: self.count(btn, rn, "", add=True))
+                        button.bind('<Button-3>', lambda ev, btn=button, rn=rn: self.count(btn, rn, "", add=False))
                         label = Tk.Label(sub, text="0") # Total label
                         label.grid(row=1, column=0)
                         self.raid_data[rn][""] = [0, label] # the "" key is used for the total
@@ -92,8 +101,8 @@ class Interface(Tk.Tk):
                             asset = self.load_asset("assets/buttons/" + l + ".png", (50, 50))
                             button = Tk.Button(sub, image=asset, text="")
                             button.grid(row=0, column=i+1)
-                            button.bind('<Button-1>', lambda ev, rn=rn, l=l: self.count(rn, l, add=True))
-                            button.bind('<Button-3>', lambda ev, rn=rn, l=l: self.count(rn, l, add=False))
+                            button.bind('<Button-1>', lambda ev, btn=button, rn=rn, l=l: self.count(btn, rn, l, add=True))
+                            button.bind('<Button-3>', lambda ev, btn=button, rn=rn, l=l: self.count(btn, rn, l, add=False))
                             d = [0, None, None] # other buttons got two labels (count and percent)
                             d[1] = Tk.Label(sub, text="0")
                             d[1].grid(row=1, column=i+1)
@@ -191,38 +200,39 @@ class Interface(Tk.Tk):
                 messagebox.showerror("Error", "The current theme in use seems to be custom and can't be modified.")
         self.settings["theme"] = self.current_theme
 
-    def count(self, rname : str, target : str, add : bool): # add/substract a value. Parameters: raid name, button target (will be empty string if it's the total button) and a boolean to control the addition/substraction
-        if rname in self.raid_data:
-            self.last_tab = rname
-            cname = self.got_chest.get(rname, None) # chest name
-            if not add: # only for substraction: take note of total normal item
-                total_item = 0
-                for k in self.raid_data[rname]:
-                    if k == "" or k.replace(".png", "")  == cname:
-                        pass
-                    else:
-                        total_item += self.raid_data[rname][k][0]
-            if target != "" and target in self.raid_data[rname]:
-                if add:
-                    self.raid_data[rname][target][0] += 1
-                else:
-                    if (target.replace(".png", "") == cname and self.raid_data[rname][target][0] <= total_item) or self.raid_data[rname][target][0] == 0: return # can't decreased if it's a chest button and its value is equal to total of other items OR if its value is simply ZERO
-                    self.raid_data[rname][target][0] = self.raid_data[rname][target][0] - 1
-                if cname is not None and target.replace(".png", "") != cname: # if we haven't pressed the chest button or the total button, we increase the chest value
-                    if cname not in self.raid_data[rname]: cname += ".png" # in case the user added the extension
-                    if cname in self.raid_data[rname]: # check again
-                        if add:
-                            self.raid_data[rname][cname][0] += 1
+    def count(self, button : Tk.Button, rname : str, target : str, add : bool): # add/substract a value. Parameters: button pressed, raid name, button target (will be empty string if it's the total button) and a boolean to control the addition/substraction
+        with button_press(button):
+            if rname in self.raid_data:
+                self.last_tab = rname
+                cname = self.got_chest.get(rname, None) # chest name
+                if not add: # only for substraction: take note of total normal item
+                    total_item = 0
+                    for k in self.raid_data[rname]:
+                        if k == "" or k.replace(".png", "")  == cname:
+                            pass
                         else:
-                            self.raid_data[rname][cname][0] = max(0, self.raid_data[rname][cname][0] - 1)
-            # total button
-            if add:
-                self.raid_data[rname][""][0] += 1
-            else:
-                if target == "" and self.raid_data[rname][""][0] <= total_item: return
-                self.raid_data[rname][""][0] = max(0, self.raid_data[rname][""][0] - 1)
-            self.modified = True
-            self.update_label(rname) # update the labels for this raid
+                            total_item += self.raid_data[rname][k][0]
+                if target != "" and target in self.raid_data[rname]:
+                    if add:
+                        self.raid_data[rname][target][0] += 1
+                    else:
+                        if (target.replace(".png", "") == cname and self.raid_data[rname][target][0] <= total_item) or self.raid_data[rname][target][0] == 0: return # can't decreased if it's a chest button and its value is equal to total of other items OR if its value is simply ZERO
+                        self.raid_data[rname][target][0] = self.raid_data[rname][target][0] - 1
+                    if cname is not None and target.replace(".png", "") != cname: # if we haven't pressed the chest button or the total button, we increase the chest value
+                        if cname not in self.raid_data[rname]: cname += ".png" # in case the user added the extension
+                        if cname in self.raid_data[rname]: # check again
+                            if add:
+                                self.raid_data[rname][cname][0] += 1
+                            else:
+                                self.raid_data[rname][cname][0] = max(0, self.raid_data[rname][cname][0] - 1)
+                # total button
+                if add:
+                    self.raid_data[rname][""][0] += 1
+                else:
+                    if target == "" and self.raid_data[rname][""][0] <= total_item: return
+                    self.raid_data[rname][""][0] = max(0, self.raid_data[rname][""][0] - 1)
+                self.modified = True
+                self.update_label(rname) # update the labels for this raid
 
     def reset(self, rname : str): # raid name
         message = Tk.messagebox.askquestion(title="Reset", message="Do you want to reset this tab?") #ask for confirmation to avoid  accidental data reset
