@@ -4,6 +4,7 @@
 
 ### Installation  
 * You only need [Python 3](https://www.python.org/downloads/) installed (It has been confirmed to work on Python 3.11 and higher).  
+* New to Github? Click the Green `Code` button at the top of this page, then "Download ZIP" to download this repository.  
 
 ### Features  
 * Lightweight.  
