@@ -7,6 +7,8 @@ from tkinter import messagebox
 import urllib.request
 import webbrowser
 from contextlib import contextmanager
+import subprocess
+import sys
 
 class Interface(Tk.Tk):
     CHESTS = ["wood", "silver", "gold", "red", "blue", "purple"] # chest list
@@ -117,8 +119,11 @@ class Interface(Tk.Tk):
         asset = self.load_asset("assets/others/theme.png", (20, 20))
         button = Tk.Button(tab, image=asset, text="Toggle Theme", compound=Tk.LEFT, command=self.toggle_theme)
         button.grid(row=0, column=0, columnspan=3, sticky="we")
+        asset = self.load_asset("assets/others/layout.png", (20, 20))
+        button = Tk.Button(tab, image=asset, text="Layout Editor", compound=Tk.LEFT, command=self.open_layout_editor)
+        button.grid(row=1, column=0, columnspan=3, sticky="we")
         self.check_update = Tk.IntVar()
-        ttk.Checkbutton(tab, text='Check for updates', variable=self.check_update, command=self.toggle_checkupdate).grid(row=1, column=0, sticky="we")
+        ttk.Checkbutton(tab, text='Check for updates', variable=self.check_update, command=self.toggle_checkupdate).grid(row=2, column=0, sticky="we")
         self.check_update.set(self.settings.get("check_update", 0))
         
         # end
@@ -342,6 +347,12 @@ class Interface(Tk.Tk):
             for x, y in v.items():
                 savedata[k][x] = y[0]
         return savedata
+
+    def open_layout_editor(self):
+        try:
+            subprocess.Popen([sys.executable, "layout_editor.pyw"], cwd="assets")
+        except Exception as e:
+            messagebox.showerror("Error", "An error occured while opening the Layout Editor:\n"+str(e))
 
 if __name__ == "__main__": # entry point
     Interface().run()
