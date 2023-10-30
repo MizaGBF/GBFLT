@@ -236,8 +236,7 @@ class Interface(Tk.Tk):
                 self.update_label(rname) # update the labels for this raid
 
     def reset(self, rname : str): # raid name
-        message = Tk.messagebox.askquestion(title="Reset", message="Do you want to reset this tab?") #ask for confirmation to avoid  accidental data reset
-        if message == "yes":
+        if Tk.messagebox.askquestion(title="Reset", message="Do you want to reset this tab?") == "yes": #ask for confirmation to avoid  accidental data reset
               if rname in self.raid_data:
                  self.last_tab = rname
                  for k in self.raid_data[rname]:

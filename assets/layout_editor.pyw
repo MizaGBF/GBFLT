@@ -19,6 +19,7 @@ class Editor(Tk.Tk):
         self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
         self.assets = {} # loaded images
         self.layout = self.load_raids()
+        self.layout_string = str(self.layout)
         Tk.Button(self, text="Save changes to 'raids.json'", command=self.save).grid(row=0, column=0, columnspan=2, sticky="we")
         Tk.Button(self, text="Original 'raids.json' on Github", command=self.github).grid(row=1, column=0, columnspan=2, sticky="we")
         self.top_frame = ttk.Frame(self)
@@ -54,6 +55,9 @@ class Editor(Tk.Tk):
             time.sleep(0.02)
 
     def close(self):
+        if self.layout_string != str(self.layout) and Tk.messagebox.askquestion(title="Warning", message="You have unsaved changes. Attempt to save now?") == "yes":
+            if not self.save():
+                return
         self.apprunning = False
         self.destroy()
 
@@ -82,8 +86,9 @@ class Editor(Tk.Tk):
         self.update_layout()
 
     def delete_tab(self, i):
-        del self.layout[i]
-        self.update_layout()
+        if Tk.messagebox.askquestion(title="Delete", message="Are you sure you want to delete Tab #{}?\nAll of its content will be lost.".format(i+1)) == "yes":
+            del self.layout[i]
+            self.update_layout()
 
     def insert_raid(self, index, i=None):
         if "raids" not in self.layout[index]: self.layout[index]["raids"] = []
@@ -94,8 +99,9 @@ class Editor(Tk.Tk):
         self.update_select(index)
 
     def delete_raid(self, index, i):
-        del self.layout[index]["raids"][i]
-        self.update_select(index)
+        if Tk.messagebox.askquestion(title="Delete", message="Are you sure you want to delete Raid #{}?\nIts content will be lost.".format(i+1)) == "yes":
+            del self.layout[index]["raids"][i]
+            self.update_select(index)
 
     def update_layout(self):
         for child in self.top_frame.winfo_children():
@@ -156,15 +162,15 @@ class Editor(Tk.Tk):
             for c, r in enumerate(t.get("raids", [])): # raid tabs
                 if "text" not in r:
                     messagebox.showerror("Error", "Raid '{}' doesn't have a 'Text' value in Tab '{}'".format(c, ti+1))
-                    return
+                    return False
                 elif r["text"] in raid_data:
                     messagebox.showerror("Error", "Duplicate raid name '{}' in Tab '{}'".format(r["text"], ti+1))
-                    return
+                    return False
                 else:
                     rn = r["text"]
                     if rn in self.FORBIDDEN:
                         messagebox.showerror("Error", "Raid name '{}' is forbidde in Tab '{}'".format(rn, ti+1))
-                        return
+                        return False
                     else:
                         raid_data[rn] = {}
                         # check for chest in the list
@@ -178,20 +184,23 @@ class Editor(Tk.Tk):
                             if l.endswith(".png"): l = l[:-3] # strip extension to avoid possible weird behaviors
                             if l in raid_data[rn]:
                                 messagebox.showerror("Error", "Raid {} '{}' in Tab '{}': '{}' is present twice in the loot list".format(c+1, rn, ti+1, l))
-                                return
+                                return False
                             elif l == "":
                                 messagebox.showerror("Error", "Raid {} '{}' in Tab '{}': There is an empty string or an extra slash '/'".format(c+1, rn, ti+1))
-                                return
+                                return False
                             elif l in self.CHESTS and l != chest:
                                 messagebox.showerror("Error", "Raid {} '{}' in Tab '{}': Only one chest button supported per raid".format(c+1, rn, ti+1))
-                                return
+                                return False
                             raid_data[rn][l] = None
         try:
             with open("raids.json", mode="w", encoding="utf-8") as f:
                 json.dump(self.layout, f, indent=4, ensure_ascii=False)
             messagebox.showinfo("Info", "'raids.json' updated with success.\nRestart GBFLT to check the changes.\nNote: If you removed or renamed a raid, its data might be deleted from 'save.json'.")
+            self.layout_string = str(self.layout)
+            return True
         except Exception as e:
             messagebox.showerror("Error", "An error occured while saving:\n"+str(e))
+            return False
 
 if __name__ == "__main__": # entry point
     Editor().run()
