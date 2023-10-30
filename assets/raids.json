@@ -1,30 +1,30 @@
 [
     {
-        "tab_image":"bar",
-        "text":"Bars",
-        "raids":[
+        "tab_image": "bar",
+        "text": "Bars",
+        "raids": [
             {
-                "raid_image":"bhl",
-                "text":"BHL",
-                "loot":[
+                "raid_image": "bhl",
+                "text": "BHL",
+                "loot": [
                     "blue",
                     "ring3",
                     "bar"
                 ]
             },
             {
-                "raid_image":"akasha",
-                "text":"Akasha",
-                "loot":[
+                "raid_image": "akasha",
+                "text": "Akasha",
+                "loot": [
                     "blue",
                     "ring3",
                     "bar"
                 ]
             },
             {
-                "raid_image":"gohl",
-                "text":"Grande",
-                "loot":[
+                "raid_image": "gohl",
+                "text": "Grande",
+                "loot": [
                     "blue",
                     "ring3",
                     "bar"
@@ -33,58 +33,58 @@
         ]
     },
     {
-        "tab_image":"sand",
-        "text":"Revans",
-        "raids":[
+        "tab_image": "sand",
+        "text": "Revans",
+        "raids": [
             {
-                "raid_image":"mugen",
-                "text":"Mugen",
-                "loot":[
+                "raid_image": "mugen",
+                "text": "Mugen",
+                "loot": [
                     "blue",
                     "wpn_mugen",
                     "sand"
                 ]
             },
             {
-                "raid_image":"diaspora",
-                "text":"Diaspora",
-                "loot":[
+                "raid_image": "diaspora",
+                "text": "Diaspora",
+                "loot": [
                     "blue",
                     "wpn_diaspora",
                     "sand"
                 ]
             },
             {
-                "raid_image":"siegfried",
-                "text":"Siegfried",
-                "loot":[
+                "raid_image": "siegfried",
+                "text": "Siegfried",
+                "loot": [
                     "blue",
                     "wpn_siegfried",
                     "sand"
                 ]
             },
             {
-                "raid_image":"siete",
-                "text":"Siete",
-                "loot":[
+                "raid_image": "siete",
+                "text": "Siete",
+                "loot": [
                     "blue",
                     "wpn_siete",
                     "sand"
                 ]
             },
             {
-                "raid_image":"cosmos",
-                "text":"Cosmos",
-                "loot":[
+                "raid_image": "cosmos",
+                "text": "Cosmos",
+                "loot": [
                     "blue",
                     "wpn_cosmos",
                     "sand"
                 ]
             },
             {
-                "raid_image":"agastia",
-                "text":"Agastia",
-                "loot":[
+                "raid_image": "agastia",
+                "text": "Agastia",
+                "loot": [
                     "blue",
                     "wpn_agastia",
                     "sand"
@@ -93,35 +93,35 @@
         ]
     },
     {
-        "tab_image":"sand",
-        "text":"Sands",
-        "raids":[
+        "tab_image": "sand",
+        "text": "Sands",
+        "raids": [
             {
-                "raid_image":"ennead",
-                "text":"Enneads",
-                "loot":[
+                "raid_image": "ennead",
+                "text": "Enneads",
+                "loot": [
                     "sand"
                 ]
             },
             {
-                "raid_image":"6d",
-                "text":"6D",
-                "loot":[
+                "raid_image": "6d",
+                "text": "6D",
+                "loot": [
                     "fireearring",
                     "sand"
                 ]
             },
             {
-                "raid_image":"subaha",
-                "text":"SuBaha",
-                "loot":[
+                "raid_image": "subaha",
+                "text": "SuBaha",
+                "loot": [
                     "sand"
                 ]
             },
             {
-                "raid_image":"hexa",
-                "text":"Hexa",
-                "loot":[
+                "raid_image": "hexa",
+                "text": "Hexa",
+                "loot": [
                     "sand"
                 ]
             }

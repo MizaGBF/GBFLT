@@ -46,13 +46,13 @@ class Interface(Tk.Tk):
             raid_tabs = ttk.Notebook(tab)
             for c, r in enumerate(t.get("raids", [])): # raid tabs
                 if "text" not in r:
-                    errors.append("Raid {} doesn't have a 'text' value".format(c))
+                    errors.append("Raid '{}' doesn't have a 'text' value in Tab '{}'".format(c, ti))
                 elif r["text"] in self.raid_data:
-                    errors.append("Duplicate raid name: {}".format(r["text"]))
+                    errors.append("Duplicate raid name '{}' in Tab '{}'".format(r["text"], ti))
                 else:
                     rn = r["text"]
                     if rn in self.FORBIDDEN:
-                        errors.append("Raid name {} is forbidden".format(rn))
+                        errors.append("Raid name {} is forbidden in Tab '{}'".format(rn, ti))
                     else:
                         tab_tree[rn] = (ti, c, raid_tabs)
                         self.raid_data[rn] = {}
@@ -82,13 +82,13 @@ class Interface(Tk.Tk):
                         for i, l in enumerate(r.get("loot", [])):
                             if l.endswith(".png"): l = l[:-3] # strip extension to avoid possible weird behaviors
                             if l in self.raid_data[rn]:
-                                errors.append("Raid {} '{}': '{}' is present twice in the loot list".format(c, rn, l))
+                                errors.append("Raid {} '{}' in Tab '{}': '{}' is present twice in the loot list".format(c, rn, ti, l))
                                 continue
                             elif l == "":
-                                errors.append("Raid {} '{}': Skipped an empty string".format(c, rn))
+                                errors.append("Raid {} '{}' in Tab '{}': Skipped an empty string".format(c, rn, ti))
                                 continue
                             elif l in self.CHESTS and l != chest:
-                                errors.append("Raid {} '{}': Only one chest button supported per raid".format(c, rn))
+                                errors.append("Raid {} '{}' in Tab '{}': Only one chest button supported per raid".format(c, rn, ti))
                                 continue
                             asset = self.load_asset("assets/buttons/" + l + ".png", (50, 50))
                             button = Tk.Button(sub, image=asset, text="")

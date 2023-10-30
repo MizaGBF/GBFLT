@@ -1,6 +1,6 @@
 # Granblue Fantasy Loot Tracker  
 * GUI to track your gold bar and sand drops in [Granblue Fantasy](https://game.granbluefantasy.jp).  
-![Preview](https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/preview.png)
+![Tracker Preview](https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/preview1.png)
 
 ### Installation  
 * You only need [Python 3](https://www.python.org/downloads/) installed (It has been confirmed to work on Python 3.11 and higher).  
@@ -25,8 +25,26 @@ Open an issue or contact me directly.
   
 ### Customization  
 The layout is fully editable.  
-Before starting, I recommend to backup `save.json` and `assets/raids.json`, in case you make a big mistake.  
-Then, open `assets/raids.json` in a text editor. The Windows Notepad can work or something better. You can also try an [Online JSON Editor](https://jsoneditoronline.org/).  
+Before starting, I recommend to backup `save.json` and `assets/raids.json`, in case you make a very big mistake.  
+There are two ways to edit the `assets/raids.json` files:  
+  
+- **The Easier Way:**  
+  
+Open the `assets` folder and double-click on `layout_editor.pyw` to open a simple interface to edit the file.  
+![Editor Preview](https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/preview2.png)
+On the top area, you can edit tab `Text` and `Image` values (the image must be a 20x20 pixels PNG file in the `assets/tabs` folder).  
+Clicking on a tab `Edit`button lets you open its content in the bottom area.  
+In the bottom area, in a similar fashion, you edit a raid `Text` and `Image` values (the image must be a 20x20 pixels PNG file in the `assets/tabs` folder and another 50x50 PNG file in the`assets/buttons` folder).  
+To edit the `Loots`, simply put the list of item images (each image must be a 50x50 pixels PNG file in the `assets/buttons` folder) separated by `/` characters. No duplicates allowed in a same list. Only one chest (`wood`, `silver`, `gold`, `red`, `blue`, `purple`) allowed too.  
+All values are case-sensitive.  
+To move a raid to another tab, copy its values (`Text`, `Image` and `Loots`) and then delete the original.  
+
+Once you're done, click on `Save changes to 'raids.json'` at the top. If errors occured, fix what you did wrong. If no errors occured, (re)start `tracker.pyw` to check how your changes look.  
+Contact me or open an issue if you find bugs.  
+  
+- **The Harder Way:**  
+  
+Open `assets/raids.json` in a text editor. The Windows Notepad can work or something better. You can also try an [Online JSON Editor](https://jsoneditoronline.org/).  
   
 The JSON structure is the following:  
 - A list of Tab objects:
@@ -39,7 +57,8 @@ The JSON structure is the following:
                 - "text": The name of the raid to be displayed on the Tab. This name is also used in the save data.  
                 - "loot": A list of strings:
                     - Each string must match a file name found in `assets/buttons`. No need to put the file extension. No duplicates allowed. Only one chest allowed max. Those strings are also used in the save data.  
-
+  
+All strings are case-sensitive.  
 Images must have the following format:  
 `assets/tabs`: 20x20 pixels, PNG format.  
 `assets/buttons`: 50x50 pixels, PNG format.  
