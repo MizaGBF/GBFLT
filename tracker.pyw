@@ -8,14 +8,6 @@ import urllib.request
 import webbrowser
 from contextlib import contextmanager
 
-@contextmanager
-def button_press(button): # context used for count(), to activate the button animation when right clicking
-    button.config(relief=Tk.SUNKEN, state=Tk.ACTIVE)
-    try:
-        yield button
-    finally:
-        button.after(100, lambda: button.config(relief=Tk.RAISED, state=Tk.NORMAL))
-
 class Interface(Tk.Tk):
     CHESTS = ["wood", "silver", "gold", "red", "blue", "purple"] # chest list
     FORBIDDEN = ["version", "last", "settings"] # forbidden raid name list
@@ -201,8 +193,16 @@ class Interface(Tk.Tk):
                 messagebox.showerror("Error", "The current theme in use seems to be custom and can't be modified.")
         self.settings["theme"] = self.current_theme
 
+    @contextmanager
+    def button_press(self, button): # context used for count(), to activate the button animation when right clicking
+        button.config(relief=Tk.SUNKEN, state=Tk.ACTIVE)
+        try:
+            yield button
+        finally:
+            button.after(100, lambda: button.config(relief=Tk.RAISED, state=Tk.NORMAL))
+
     def count(self, button : Tk.Button, rname : str, target : str, add : bool): # add/substract a value. Parameters: button pressed, raid name, button target (will be empty string if it's the total button) and a boolean to control the addition/substraction
-        with button_press(button):
+        with self.button_press(button):
             if rname in self.raid_data:
                 self.last_tab = rname
                 cname = self.got_chest.get(rname, None) # chest name
