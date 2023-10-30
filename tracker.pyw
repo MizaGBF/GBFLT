@@ -120,10 +120,13 @@ class Interface(Tk.Tk):
         button = Tk.Button(tab, image=asset, text="Toggle Theme", compound=Tk.LEFT, command=self.toggle_theme)
         button.grid(row=0, column=0, columnspan=3, sticky="we")
         asset = self.load_asset("assets/others/layout.png", (20, 20))
-        button = Tk.Button(tab, image=asset, text="Layout Editor", compound=Tk.LEFT, command=self.open_layout_editor)
+        button = Tk.Button(tab, image=asset, text="Layout Editor  ", compound=Tk.LEFT, command=self.open_layout_editor)
         button.grid(row=1, column=0, columnspan=3, sticky="we")
+        asset = self.load_asset("assets/others/restart.png", (20, 20))
+        button = Tk.Button(tab, image=asset, text="Restart the App", compound=Tk.LEFT, command=self.restart)
+        button.grid(row=2, column=0, columnspan=3, sticky="we")
         self.check_update = Tk.IntVar()
-        ttk.Checkbutton(tab, text='Check for updates', variable=self.check_update, command=self.toggle_checkupdate).grid(row=2, column=0, sticky="we")
+        ttk.Checkbutton(tab, text='Check for updates', variable=self.check_update, command=self.toggle_checkupdate).grid(row=3, column=0, sticky="we")
         self.check_update.set(self.settings.get("check_update", 0))
         
         # end
@@ -353,6 +356,14 @@ class Interface(Tk.Tk):
             subprocess.Popen([sys.executable, "layout_editor.pyw"], cwd="assets")
         except Exception as e:
             messagebox.showerror("Error", "An error occured while opening the Layout Editor:\n"+str(e))
+
+    def restart(self):
+        try:
+            self.save()
+            subprocess.Popen([sys.executable, sys.argv[0]])
+            self.close()
+        except Exception as e:
+            messagebox.showerror("Error", "An error occured while attempting to restart the application:\n"+str(e))
 
 if __name__ == "__main__": # entry point
     Interface().run()
