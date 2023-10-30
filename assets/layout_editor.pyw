@@ -3,7 +3,7 @@ from tkinter import ttk
 from tkinter import PhotoImage
 import time
 import json
-from tkinter import messagebox
+from tkinter import messagebox, simpledialog
 import webbrowser
 
 class Editor(Tk.Tk):
@@ -103,6 +103,18 @@ class Editor(Tk.Tk):
             del self.layout[index]["raids"][i]
             self.update_select(index)
 
+    def move_raid(self, index, i):
+        target = simpledialog.askstring("Move Raid", "Move the raid to the end of which Tab? (Input its number)")
+        if target is None: return
+        try:
+            tid = int(target)-1
+            if tid < 0 or tid >= len(self.layout): raise Exception
+            tab = self.layout[tid]["raids"].append(self.layout[index]["raids"][i])
+            del self.layout[index]["raids"][i]
+            self.update_select(index)
+        except:
+            messagebox.showerror("Error", "Invalid Tab number "+str(target))
+
     def update_layout(self):
         for child in self.top_frame.winfo_children():
             child.destroy()
@@ -150,7 +162,8 @@ class Editor(Tk.Tk):
                 self.tab_text_var[-1].trace("w", lambda name, index, mode, sv=self.tab_text_var[-1], idx=index, i=i: self.edit_entry(sv, i, idx, "loot"))
                 ttk.Entry(self.selected, textvariable=self.tab_text_var[-1]).grid(row=i+2, column=6, sticky="w")
                 Tk.Button(self.selected, text="Insert After", command=lambda index=index, i=i: self.insert_raid(index, i)).grid(row=i+2, column=7, sticky="w")
-                Tk.Button(self.selected, text="Delete", command=lambda index=index, i=i: self.delete_raid(index, i)).grid(row=i+2, column=8, sticky="w")
+                Tk.Button(self.selected, text="Move To", command=lambda index=index, i=i: self.move_raid(index, i)).grid(row=i+2, column=8, sticky="w")
+                Tk.Button(self.selected, text="Delete", command=lambda index=index, i=i: self.delete_raid(index, i)).grid(row=i+2, column=9, sticky="w")
         else:
             Tk.Label(self.selected, text="No Tab Selected").grid(row=0, column=0, columnspan=6, sticky="w")
 
