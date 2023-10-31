@@ -9,6 +9,7 @@ import webbrowser
 from contextlib import contextmanager
 import subprocess
 import sys
+from typing import Callable, Optional
 
 class Interface(Tk.Tk):
     CHESTS = ["wood", "silver", "gold", "red", "blue", "purple"] # chest list
@@ -19,6 +20,7 @@ class Interface(Tk.Tk):
         self.parent = None
         self.apprunning = True
         self.version = "0.0"
+        self.stats_window = None # reference to the current stat window
         errors = self.load_manifest()
         savedata, rerrors = self.load_savedata()
         errors += rerrors
@@ -43,8 +45,7 @@ class Interface(Tk.Tk):
         for ti, t in enumerate(data): # top tabs
             tab = ttk.Frame(self.top_tab)
             self.top_tab.add(tab, text=t.get("text", ""))
-            asset = self.load_asset("assets/tabs/" + t.get("tab_image", "").replace(".png", "") + ".png", (20, 20))
-            self.top_tab.tab(tab, image=asset, compound=Tk.LEFT)
+            self.top_tab.tab(tab, image=self.load_asset("assets/tabs/" + t.get("tab_image", "").replace(".png", "") + ".png", (20, 20)), compound=Tk.LEFT)
             raid_tabs = ttk.Notebook(tab)
             for c, r in enumerate(t.get("raids", [])): # raid tabs
                 if "text" not in r:
@@ -60,11 +61,8 @@ class Interface(Tk.Tk):
                         self.raid_data[rn] = {}
                         sub = ttk.Frame(raid_tabs)
                         raid_tabs.add(sub, text=rn)
-                        asset = self.load_asset("assets/tabs/" + r.get("raid_image", "").replace(".png", "") + ".png", (20, 20))
-                        raid_tabs.tab(sub, image=asset, compound=Tk.LEFT)
-                        asset = self.load_asset("assets/buttons/" + r.get("raid_image", "").replace(".png", "") + ".png", (50, 50))
-                        button = Tk.Button(sub, image=asset, text="")
-                        button.grid(row=0, column=0)
+                        raid_tabs.tab(sub, image=self.load_asset("assets/tabs/" + r.get("raid_image", "").replace(".png", "") + ".png", (20, 20)), compound=Tk.LEFT)
+                        button = self.make_button(sub, "", None, 0, 0, 1, "w", ("buttons", r.get("raid_image", ""), (50, 50)))
                         button.bind('<Button-1>', lambda ev, btn=button, rn=rn: self.count(btn, rn, "", add=True))
                         button.bind('<Button-3>', lambda ev, btn=button, rn=rn: self.count(btn, rn, "", add=False))
                         label = Tk.Label(sub, text="0") # Total label
@@ -92,9 +90,7 @@ class Interface(Tk.Tk):
                             elif l in self.CHESTS and l != chest:
                                 errors.append("Raid {} '{}' in Tab '{}': Only one chest button supported per raid".format(c, rn, ti))
                                 continue
-                            asset = self.load_asset("assets/buttons/" + l + ".png", (50, 50))
-                            button = Tk.Button(sub, image=asset, text="")
-                            button.grid(row=0, column=i+1)
+                            button = self.make_button(sub, "", None, 0, i+1, 1, "w", ("buttons", l, (50, 50)))
                             button.bind('<Button-1>', lambda ev, btn=button, rn=rn, l=l: self.count(btn, rn, l, add=True))
                             button.bind('<Button-3>', lambda ev, btn=button, rn=rn, l=l: self.count(btn, rn, l, add=False))
                             d = [0, None, None] # other buttons got two labels (count and percent)
@@ -106,27 +102,22 @@ class Interface(Tk.Tk):
                                 d.append(Tk.Label(sub, text="0%"))
                                 d[3].grid(row=3, column=i+1)
                             self.raid_data[rn][l] = d
-                    asset = self.load_asset("assets/others/reset.png", (20, 20))
-                    button = Tk.Button(sub, image=asset, text="Reset", compound=Tk.LEFT, command=lambda rn=rn: self.reset(rn)) # reset button for the tab
-                    button.grid(row=4, column=0, sticky="w", columnspan=3)
+                    self.make_button(sub, "Reset", lambda rn=rn: self.reset(rn), 4, 0, 3, "w", ("others", "reset", (20, 20)))
             raid_tabs.pack(expand=1, fill="both")
         # settings
         tab = ttk.Frame(self.top_tab)
         self.top_tab.add(tab, text="Settings")
-        asset = self.load_asset("assets/others/settings.png", (20, 20))
-        self.top_tab.tab(tab, image=asset, compound=Tk.LEFT)
+        self.top_tab.tab(tab, image=self.load_asset("assets/others/settings.png", (20, 20)), compound=Tk.LEFT)
         raid_tabs = ttk.Notebook(tab)
-        asset = self.load_asset("assets/others/theme.png", (20, 20))
-        button = Tk.Button(tab, image=asset, text="Toggle Theme", compound=Tk.LEFT, command=self.toggle_theme)
-        button.grid(row=0, column=0, columnspan=3, sticky="we")
-        asset = self.load_asset("assets/others/layout.png", (20, 20))
-        button = Tk.Button(tab, image=asset, text="Layout Editor  ", compound=Tk.LEFT, command=self.open_layout_editor)
-        button.grid(row=1, column=0, columnspan=3, sticky="we")
-        asset = self.load_asset("assets/others/restart.png", (20, 20))
-        button = Tk.Button(tab, image=asset, text="Restart the App", compound=Tk.LEFT, command=self.restart)
-        button.grid(row=2, column=0, columnspan=3, sticky="we")
+        self.make_button(tab, "Toggle Theme", self.toggle_theme, 0, 0, 3, "we", ("others", "theme", (20, 20)))
+        self.make_button(tab, "Layout Editor  ", self.open_layout_editor, 1, 0, 3, "we", ("others", "layout", (20, 20)))
+        self.make_button(tab, "Restart the App", self.restart, 2, 0, 3, "we", ("others", "restart", (20, 20)))
+        self.make_button(tab, "Open Statistics", self.stats, 3, 0, 3, "we", ("others", "stats", (20, 20)))
+        self.make_button(tab, "Github Repository", self.github, 0, 3, 3, "we", ("others", "github", (20, 20)))
+        self.make_button(tab, "Bug Report        ", self.github_issue, 1, 3, 3, "we", ("others", "bug", (20, 20)))
+        self.make_button(tab, "Check Updates   ", lambda : self.check_new_update(False), 2, 3, 3, "we", ("others", "update", (20, 20)))
         self.check_update = Tk.IntVar()
-        ttk.Checkbutton(tab, text='Check for updates', variable=self.check_update, command=self.toggle_checkupdate).grid(row=3, column=0, sticky="we")
+        ttk.Checkbutton(tab, text='Auto Check Updates', variable=self.check_update, command=self.toggle_checkupdate).grid(row=3, column=3, columnspan=4, sticky="we")
         self.check_update.set(self.settings.get("check_update", 0))
         
         # end
@@ -143,6 +134,15 @@ class Interface(Tk.Tk):
         elif self.settings.get("check_update", 0) == 1:
             self.check_new_update()
         self.last_savedata_string = str(self.get_save_data()) # get current state of the save as a string
+
+    def make_button(self, parent, text : str, command : Optional[Callable], row : int, column : int, columnspan : int, sticky : str, asset_tuple : Optional[tuple] = None): # function to make our buttons. Asset tuple is composed of 3 elements: folder, asset name and a size tuple (in pixels)
+        if asset_tuple is not None:
+            asset = self.load_asset("assets/" + asset_tuple[0] + "/" + asset_tuple[1].replace(".png", "") + ".png", asset_tuple[2])
+        else:
+            asset = None
+        button = Tk.Button(parent, image=asset, text=text, compound=Tk.LEFT, command=command)
+        button.grid(row=row, column=column, columnspan=columnspan, sticky=sticky)
+        return button
 
     def load_asset(self, path : str, size : tuple = None): # load an image file (if not loaded) and return it. If error/not found, return None or an empty image of specified size
         try:
@@ -168,9 +168,10 @@ class Interface(Tk.Tk):
             if count % 3000 == 0:
                 self.save()
 
-    def close(self):
+    def close(self): # called when we close the window
         self.apprunning = False
         self.save() # last save attempt
+        if self.stats_window is not None: self.stats_window.close()
         self.destroy()
 
     def load_raids(self): # load raids.json
@@ -202,7 +203,7 @@ class Interface(Tk.Tk):
         self.settings["theme"] = self.current_theme
 
     @contextmanager
-    def button_press(self, button): # context used for count(), to activate the button animation when right clicking
+    def button_press(self, button : Tk.Button): # context used for count(), to activate the button animation when right clicking
         button.config(relief=Tk.SUNKEN, state=Tk.ACTIVE)
         try:
             yield button
@@ -242,6 +243,7 @@ class Interface(Tk.Tk):
                     self.raid_data[rname][""][0] = max(0, self.raid_data[rname][""][0] - 1)
                 self.modified = True
                 self.update_label(rname) # update the labels for this raid
+                if self.stats_window is not None: self.stats_window.update_data() # update stats window if open
 
     def reset(self, rname : str): # raid name
         if Tk.messagebox.askquestion(title="Reset", message="Do you want to reset this tab?") == "yes": #ask for confirmation to avoid  accidental data reset
@@ -273,7 +275,7 @@ class Interface(Tk.Tk):
                     else:
                         v[3].config(text="0%")
 
-    def cmpVer(self, mver, tver): # compare version strings, True if mver greater or equal, else False
+    def cmpVer(self, mver : str, tver : str): # compare version strings, True if mver greater or equal, else False
         me = mver.split('.')
         te = tver.split('.')
         for i in range(0, min(len(me), len(te))):
@@ -281,15 +283,18 @@ class Interface(Tk.Tk):
                 return False
         return True
 
-    def check_new_update(self): # request the manifest file on github and compare the versions
+    def check_new_update(self, silent : bool = True): # request the manifest file on github and compare the versions
         try:
             with urllib.request.urlopen("https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/manifest.json") as url:
                 data = json.loads(url.read().decode("utf-8"))
             if "version" in data and self.version != "0.0" and not self.cmpVer(self.version, data["version"]):
                 if Tk.messagebox.askquestion(title="Update", message="An update is available.\nCurrent version: {}\nNew Version: {}\nOpen the Github page?".format(self.version, data["version"])) == "yes":
                     webbrowser.open("https://github.com/MizaGBF/GBFLT", new=2, autoraise=True)
+            elif not silent:
+                messagebox.showinfo("Update", "This copy of GBFLT is up-to-date.")
         except:
-            pass
+            if not silent:
+                messagebox.showerror("Error", "An error occured while checking for new updates.\nTry again later or check manually.")
 
     def load_manifest(self): # load data from manifest.json (only the version number for now)
         try:
@@ -312,7 +317,7 @@ class Interface(Tk.Tk):
                 errors.append("Error while opening save.json: " + str(e))
             return None, errors
 
-    def apply_savedata(self, savedata): # set raid labels, etc...
+    def apply_savedata(self, savedata : dict): # set raid labels, etc...
         errors = []
         missing = False
         self.last_tab = savedata.get("last", None)
@@ -328,7 +333,7 @@ class Interface(Tk.Tk):
             self.update_label(k)
         return errors
 
-    def save(self): # save
+    def save(self): # update save.json
         if self.modified:
             self.modified = False
             savedata = self.get_save_data()
@@ -343,7 +348,7 @@ class Interface(Tk.Tk):
                     print(e)
                     messagebox.showerror("Error", "An error occured while saving:\n"+str(e))
 
-    def get_save_data(self):
+    def get_save_data(self): # build the save data (as seen in save.json) and return it
         savedata = {"version":self.version, "last":self.last_tab, "settings":self.settings} # version string in case I change the format later, for retrocompatibility and stuff
         for k, v in self.raid_data.items():
             savedata[k] = {}
@@ -351,19 +356,74 @@ class Interface(Tk.Tk):
                 savedata[k][x] = y[0]
         return savedata
 
-    def open_layout_editor(self):
+    def open_layout_editor(self): # open assets/layout_editor.pyw
         try:
             subprocess.Popen([sys.executable, "layout_editor.pyw"], cwd="assets")
         except Exception as e:
             messagebox.showerror("Error", "An error occured while opening the Layout Editor:\n"+str(e))
 
-    def restart(self):
+    def restart(self): # retsart the app (used to check layout changes)
         try:
             self.save()
             subprocess.Popen([sys.executable, sys.argv[0]])
             self.close()
         except Exception as e:
             messagebox.showerror("Error", "An error occured while attempting to restart the application:\n"+str(e))
+
+    def stats(self): # open the stats window
+        if self.stats_window is not None:
+            self.stats_window.lift()
+        else:
+            self.stats_window = StatScreen(self)
+
+    def github(self): # open the github repo
+        webbrowser.open("https://github.com/MizaGBF/GBFLT", new=2, autoraise=True)
+
+    def github_issue(self): # open the github repo on the issues page
+        webbrowser.open("https://github.com/MizaGBF/GBFLT/issues", new=2, autoraise=True)
+
+class StatScreen(Tk.Toplevel): # stats window
+    WIDE=4
+    def __init__(self, parent : Tk.Tk):
+        # window
+        self.parent = parent
+        Tk.Toplevel.__init__(self,parent)
+        self.title("GBF Loot Tracker - Statistics")
+        self.resizable(width=False, height=False) # not resizable
+        self.iconbitmap('assets/icon.ico')
+        self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
+        self.update_data()
+
+    def update_data(self): # update the data shown on the window
+        # cleanup
+        for child in self.winfo_children(): # clean current elements
+            child.destroy()
+        # calculate stats
+        data = {}
+        most_done = None
+        for n, r in self.parent.raid_data.items():
+            for l, s in r.items():
+                data[l] = data.get(l, 0) + s[0]
+                if l == "" and s[0] > 0:
+                    if most_done is None or s[0] > most_done[0]:
+                        most_done = (s[0], n)
+        data = dict(sorted(data.items(), key=lambda item: item[1], reverse=True))
+        # display
+        if most_done is not None:
+            Tk.Label(self, text="Most cleared: {:} - {:} times ({:.2f}%)".format(most_done[1], most_done[0], 100 * most_done[0] / data.get("", 1)).replace(".00%", "%")).grid(row=0, column=0, columnspan=8)
+        count = 0
+        for l, s in data.items():
+            if s == 0: break
+            asset = self.parent.load_asset("assets/buttons/" + (l.replace(".png", "") if l != "" else "unknown") + ".png", (50, 50))
+            Tk.Label(self, image=asset).grid(row=1 + count // self.WIDE, column=count % self.WIDE * 2)
+            Tk.Label(self, text=str(s)).grid(row=1 + count // self.WIDE, column=count % self.WIDE * 2 + 1)
+            count += 1
+        if count == 0:
+            Tk.Label(self, text="No Statistics available yet").grid(row=1, column=0, columnspan=8)
+
+    def close(self): # called on close
+        self.parent.stats_window = None
+        self.destroy()
 
 if __name__ == "__main__": # entry point
     Interface().run()

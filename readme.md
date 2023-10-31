@@ -1,16 +1,23 @@
 # Granblue Fantasy Loot Tracker  
 * GUI to track your gold bar and sand drops in [Granblue Fantasy](https://game.granbluefantasy.jp).  
-![Tracker Preview](https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/preview1.png)
-
-### Installation  
-* You only need [Python 3](https://www.python.org/downloads/) installed (It has been confirmed to work on Python 3.11 and higher).  
-* New to Github? Click the Green `Code` button at the top of this page, then "Download ZIP" to download this repository.  
-
+![Tracker Preview 1](https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/preview1.png)  
+  
 ### Features  
 * Lightweight.  
 * No third-party dependencies required.  
 * Light and Dark themes based on [the Azure TTK Theme](https://github.com/rdbende/Azure-ttk-theme).  
 * Customizable layout.  
+* Global statistics.  
+![Tracker Preview 2](https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/preview2.png)  
+  
+### Installation  
+* You only need [Python 3](https://www.python.org/downloads/) installed (It has been confirmed to work on Python 3.11 and higher).  
+* New to Github? Click the Green `Code` button at the top of this page, then "Download ZIP" to download this repository.  
+  
+### Update  
+* Backup your `save.json` and `assets/raids.json` (if customized) files.  
+* Download and overwrite your current GBFLT copy with the new one.  
+* Put your `save.json` and `assets/raids.json` files back in place (overwrite, if asked).  
   
 ### Usage  
 * Simply double-click on `tracker.pyw`, assuming Python is installed correctly.  
@@ -32,7 +39,7 @@ There are two ways to edit the `assets/raids.json` files:
 - **The Easier Way:**  
   
 Open the `assets` folder and double-click on `layout_editor.pyw` to open a simple interface to edit the file. Alternatively, press the button `Layout Editor` under the `settings` tab of the tracker.  
-![Editor Preview](https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/preview2.png)  
+![Editor Preview](https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/preview3.png)  
 - On the top area, you can edit a tab `Text` and `Image` values (the image must be a 20x20 pixels PNG file in the `assets/tabs` folder).  
 - Clicking on a tab `Edit`button lets you open its content in the bottom area.  
 - In the bottom area, in a similar fashion, you edit a raid `Text` and `Image` values (the image must be a 20x20 pixels PNG file in the `assets/tabs` folder and another 50x50 PNG file in the`assets/buttons` folder).  
