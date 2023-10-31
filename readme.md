@@ -69,5 +69,5 @@ All strings are case-sensitive.
 Images must have the following format:  
 `assets/tabs`: 20x20 pixels, PNG format.  
 `assets/buttons`: 50x50 pixels, PNG format.  
+Looking for a particular boss icon? Check out [GBFAL](https://mizagbf.github.io/GBFAL/), then make sure to resize the image.  
 Other sizes will work but might not look nice.  
-
