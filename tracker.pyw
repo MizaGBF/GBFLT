@@ -11,6 +11,7 @@ from contextlib import contextmanager
 import subprocess
 import sys
 from typing import Callable, Optional
+import traceback
 
 class Interface(Tk.Tk):
     CHESTS = ["wood", "silver", "gold", "red", "blue", "purple"] # chest list
@@ -158,7 +159,8 @@ class Interface(Tk.Tk):
                     if '__dummy_photo_image__'+str(size) not in self.assets: # keep a reference or it won't work
                         self.assets['__dummy_photo_image__'+str(size)] = Tk.PhotoImage(width=size[0], height=size[1])
                     return self.assets['__dummy_photo_image__'+str(size)]
-                except: pass
+                except Exception as e:
+                    print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
 
     def run(self): # main loop
         count = 0
@@ -190,18 +192,19 @@ class Interface(Tk.Tk):
         self.settings["check_update"] = self.check_update.get()
 
     def toggle_theme(self): # toggle the theme
-        match self.current_theme:
-            case "light":
-                self.call("set_theme", self.THEME[1])
-                self.current_theme = self.THEME[1]
-                self.modified = True
-            case "dark":
-                self.call("set_theme", self.THEME[0])
-                self.current_theme = self.THEME[0]
-                self.modified = True
-            case _: # in case the user modified the application to use a custom theme
-                messagebox.showerror("Error", "The current theme in use seems to be custom and can't be modified.")
-        self.settings["theme"] = self.current_theme
+        try:
+            for i in range(len(self.THEME)): # search the theme
+                if self.THEME[i] == self.current_theme:
+                    self.current_theme = self.THEME[(i+1)%len(self.THEME)] # switch to the next one
+                    self.call("set_theme", self.current_theme)
+                    self.settings["theme"] = self.current_theme
+                    self.modified = True
+                    return
+            # not found
+            self.current_theme = self.THEME[-1]
+            self.toggle_theme()
+        except Exception as e:
+            print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
 
     @contextmanager
     def button_press(self, button : Tk.Button): # context used for count(), to activate the button animation when right clicking
@@ -293,7 +296,8 @@ class Interface(Tk.Tk):
                     webbrowser.open("https://github.com/MizaGBF/GBFLT", new=2, autoraise=True)
             elif not silent:
                 messagebox.showinfo("Update", "This copy of GBFLT is up-to-date.")
-        except:
+        except Exception as e:
+            print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
             if not silent:
                 messagebox.showerror("Error", "An error occured while checking for new updates.\nTry again later or check manually.")
 
@@ -302,7 +306,8 @@ class Interface(Tk.Tk):
             with open("assets/manifest.json", mode="r", encoding="utf-8") as f:
                 self.version = json.load(f)["version"]
             return []
-        except:
+        except Exception as e:
+            print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
             return ["Couldn't open 'assets/manifest.json'"]
 
     def load_savedata(self): # load save.data, return a tuple of the savedata (None if error) and an error list
@@ -310,10 +315,9 @@ class Interface(Tk.Tk):
         try:
             with open("save.json", mode="r", encoding="utf-8") as f:
                 savedata = json.load(f)
-            print("save.json loaded")
             return savedata, []
         except Exception as e:
-            print(e)
+            print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
             if "No such file or directory" not in str(e):
                 errors.append("Error while opening save.json: " + str(e))
             return None, errors
@@ -344,9 +348,8 @@ class Interface(Tk.Tk):
                 try:
                     with open("save.json", mode="w", encoding="utf-8") as f:
                         json.dump(savedata, f)
-                    print("save.json updated")
                 except Exception as e:
-                    print(e)
+                    print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
                     messagebox.showerror("Error", "An error occured while saving:\n"+str(e))
 
     def get_save_data(self): # build the save data (as seen in save.json) and return it
