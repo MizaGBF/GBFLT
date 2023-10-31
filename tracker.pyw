@@ -1,4 +1,5 @@
 import tkinter as Tk
+import tkinter.font as tkFont
 from tkinter import ttk
 from tkinter import PhotoImage
 import time
@@ -383,7 +384,9 @@ class Interface(Tk.Tk):
         webbrowser.open("https://github.com/MizaGBF/GBFLT/issues", new=2, autoraise=True)
 
 class StatScreen(Tk.Toplevel): # stats window
-    WIDE=4
+    WIDTH=4
+    TEXT_WIDTH=8
+    BOLD_FONT_MOD=2
     def __init__(self, parent : Tk.Tk):
         # window
         self.parent = parent
@@ -392,6 +395,7 @@ class StatScreen(Tk.Toplevel): # stats window
         self.resizable(width=False, height=False) # not resizable
         self.iconbitmap('assets/icon.ico')
         self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
+        self.defaultfont = tkFont.nametofont('TkDefaultFont').actual() # used to make top label bold
         self.update_data()
 
     def update_data(self): # update the data shown on the window
@@ -400,26 +404,37 @@ class StatScreen(Tk.Toplevel): # stats window
             child.destroy()
         # calculate stats
         data = {}
-        most_done = None
+        raid_counts = {}
         for n, r in self.parent.raid_data.items():
             for l, s in r.items():
                 data[l] = data.get(l, 0) + s[0]
                 if l == "" and s[0] > 0:
-                    if most_done is None or s[0] > most_done[0]:
-                        most_done = (s[0], n)
+                    raid_counts[n] = s[0]
+        # sorted
         data = dict(sorted(data.items(), key=lambda item: item[1], reverse=True))
+        raid_counts = dict(sorted(raid_counts.items(), key=lambda item: item[1], reverse=True))
         # display
-        if most_done is not None:
-            Tk.Label(self, text="Most cleared: {:} - {:} times ({:.2f}%)".format(most_done[1], most_done[0], 100 * most_done[0] / data.get("", 1)).replace(".00%", "%")).grid(row=0, column=0, columnspan=8)
+        # raid ranking
+        if len(raid_counts) > 0:
+            count = 0
+            top = Tk.Label(self, text="Top cleared Raids", font=(self.defaultfont['family'], self.defaultfont['size']+self.BOLD_FONT_MOD, 'bold'))
+            top.grid(row=0, column=0, columnspan=self.TEXT_WIDTH, sticky="w")
+            for n, s in raid_counts.items():
+                Tk.Label(self, text="#{:}: {:} - {:} times ({:.2f}%)".format(count+1, n, s, 100 * s / data.get("", 1)).replace(".00%", "%")).grid(row=count+1, column=0, columnspan=self.TEXT_WIDTH, sticky="w")
+                count += 1
+                if count >= 3: break # stop at top 3
+        ttk.Separator(self, orient='horizontal').grid(row=4, column=0, columnspan=max(self.WIDTH*2, self.TEXT_WIDTH), sticky="we") # separator to make it pretty
+        # item data
         count = 0
         for l, s in data.items():
             if s == 0: break
             asset = self.parent.load_asset("assets/buttons/" + (l.replace(".png", "") if l != "" else "unknown") + ".png", (50, 50))
-            Tk.Label(self, image=asset).grid(row=1 + count // self.WIDE, column=count % self.WIDE * 2)
-            Tk.Label(self, text=str(s)).grid(row=1 + count // self.WIDE, column=count % self.WIDE * 2 + 1)
+            Tk.Label(self, image=asset).grid(row=5 + count // self.WIDTH, column=count % self.WIDTH * 2)
+            Tk.Label(self, text=str(s)).grid(row=5 + count // self.WIDTH, column=count % self.WIDTH * 2 + 1)
             count += 1
+        # message if no data
         if count == 0:
-            Tk.Label(self, text="No Statistics available yet").grid(row=1, column=0, columnspan=8)
+            Tk.Label(self, text="No Statistics available yet.                    \n\n\n", font=(self.defaultfont['family'], self.defaultfont['size']+self.BOLD_FONT_MOD, 'bold')).grid(row=5, column=0, columnspan=8)
 
     def close(self): # called on close
         self.parent.stats_window = None
