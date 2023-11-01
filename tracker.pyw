@@ -15,7 +15,8 @@ import traceback
 
 class Interface(Tk.Tk):
     CHESTS = ["wood", "silver", "gold", "red", "blue", "purple"] # chest list
-    FORBIDDEN = ["version", "last", "settings"] # forbidden raid name list
+    RARES = ["bar", "sand"] # rare item
+    FORBIDDEN = ["version", "last", "settings", "history"] # forbidden raid name list
     THEME = ["light", "dark"]
     def __init__(self):
         Tk.Tk.__init__(self,None)
@@ -26,6 +27,7 @@ class Interface(Tk.Tk):
         errors = self.load_manifest()
         savedata, rerrors = self.load_savedata()
         errors += rerrors
+        self.history = {} if savedata is None else savedata.get("history", {})
         self.settings = {} if savedata is None else savedata.get("settings", {})
         self.current_theme = self.settings.get("theme", self.THEME[0])
         self.call('source', 'assets/themes/main.tcl')
@@ -37,6 +39,7 @@ class Interface(Tk.Tk):
         self.assets = {} # contains loaded images
         self.raid_data = {} # contains the layout
         self.got_chest = {} # dict of raid with a chest button, and their chest button name
+        self.got_rare = {} # set of raid with a bar or sand button
         self.last_tab = None # track the last tab used
         self.modified = False # if True, need to save
         data, rerrors = self.load_raids()
@@ -69,7 +72,9 @@ class Interface(Tk.Tk):
                         button.bind('<Button-3>', lambda ev, btn=button, rn=rn: self.count(btn, rn, "", add=False))
                         label = Tk.Label(sub, text="0") # Total label
                         label.grid(row=1, column=0)
-                        self.raid_data[rn][""] = [0, label] # the "" key is used for the total
+                        hist = Tk.Label(sub, text="") # History label
+                        hist.grid(row=4, column=1, columnspan=10)
+                        self.raid_data[rn][""] = [0, label, hist] # the "" key is used for the total
                         # check for chest in the list
                         chest = None
                         for l in r.get("loot", []):
@@ -92,6 +97,9 @@ class Interface(Tk.Tk):
                             elif l in self.CHESTS and l != chest:
                                 errors.append("Raid {} '{}' in Tab '{}': Only one chest button supported per raid".format(c, rn, ti))
                                 continue
+                            if l in self.RARES:
+                                if rn not in self.got_rare: self.got_rare[rn] = []
+                                self.got_rare[rn].append(l)
                             button = self.make_button(sub, "", None, 0, i+1, 1, "w", ("buttons", l, (50, 50)))
                             button.bind('<Button-1>', lambda ev, btn=button, rn=rn, l=l: self.count(btn, rn, l, add=True))
                             button.bind('<Button-3>', lambda ev, btn=button, rn=rn, l=l: self.count(btn, rn, l, add=False))
@@ -104,7 +112,7 @@ class Interface(Tk.Tk):
                                 d.append(Tk.Label(sub, text="0%"))
                                 d[3].grid(row=3, column=i+1)
                             self.raid_data[rn][l] = d
-                    self.make_button(sub, "Reset", lambda rn=rn: self.reset(rn), 4, 0, 3, "w", ("others", "reset", (20, 20)))
+                    self.make_button(sub, "Reset", lambda rn=rn: self.reset(rn), 4, 0, 1, "w", ("others", "reset", (20, 20)))
             raid_tabs.pack(expand=1, fill="both")
         # settings
         tab = ttk.Frame(self.top_tab)
@@ -132,7 +140,7 @@ class Interface(Tk.Tk):
         if len(errors) > 0:
             if len(errors) > 6:
                 errors = errors[:6] + ["And {} more errors...".format(len(errors)-6)]
-            messagebox.showerror("Important", "The following occured during startup:\n- " + "\n- ".join(errors) + "\n\nIt's recommended to close the app and fix those issues.")
+            messagebox.showerror("Important", "The following warnings/errors occured during startup:\n- " + "\n- ".join(errors) + "\n\nIt's recommended to close the app and fix those issues, if possible.")
         elif self.settings.get("check_update", 0) == 1:
             self.check_new_update()
         self.last_savedata_string = str(self.get_save_data()) # get current state of the save as a string
@@ -227,24 +235,28 @@ class Interface(Tk.Tk):
                         else:
                             total_item += self.raid_data[rname][k][0]
                 if target != "" and target in self.raid_data[rname]:
+                    # add/sub to item value
                     if add:
                         self.raid_data[rname][target][0] += 1
+                        if target in self.RARES: # add new point to history if rare item
+                            self.add_to_history(rname, target, self.raid_data[rname][target][0], self.raid_data[rname][""][0]+1 if rname not in self.got_chest else self.raid_data[rname][self.got_chest[rname]][0]+1)
                     else:
-                        if (target.replace(".png", "") == cname and self.raid_data[rname][target][0] <= total_item) or self.raid_data[rname][target][0] == 0: return # can't decreased if it's a chest button and its value is equal to total of other items OR if its value is simply ZERO
+                        if (target.replace(".png", "") == cname and self.raid_data[rname][target][0] <= total_item) or self.raid_data[rname][target][0] == 0: return # can't decrease if it's a chest button and its value is equal to total of other items OR if its value is simply ZERO
                         self.raid_data[rname][target][0] = self.raid_data[rname][target][0] - 1
+                    # chest button editing
                     if cname is not None and target.replace(".png", "") != cname: # if we haven't pressed the chest button or the total button, we increase the chest value
-                        if cname not in self.raid_data[rname]: cname += ".png" # in case the user added the extension
                         if cname in self.raid_data[rname]: # check again
                             if add:
                                 self.raid_data[rname][cname][0] += 1
                             else:
                                 self.raid_data[rname][cname][0] = max(0, self.raid_data[rname][cname][0] - 1)
-                # total button
+                # total button editing
                 if add:
                     self.raid_data[rname][""][0] += 1
                 else:
                     if target == "" and self.raid_data[rname][""][0] <= total_item: return
                     self.raid_data[rname][""][0] = max(0, self.raid_data[rname][""][0] - 1)
+                # done
                 self.modified = True
                 self.update_label(rname) # update the labels for this raid
                 if self.stats_window is not None: self.stats_window.update_data() # update stats window if open
@@ -264,7 +276,23 @@ class Interface(Tk.Tk):
             chest_count = 0
             if rname in self.got_chest: # get total of chest
                 chest_count = self.raid_data[rname][self.got_chest[rname]][0]
-            self.raid_data[rname][""][1].config(text =str(total))
+            self.raid_data[rname][""][1].config(text=str(total))
+            # update "since the last" label
+            if rname in self.got_rare:
+                k = self.got_rare[rname][0]
+                v = chest_count if rname in self.got_chest else total
+                r = (self.got_chest[rname] + " chests" if rname in self.got_chest else "battles").capitalize()
+                if self.raid_data[rname][k][0] > 0:
+                    h = self.history[rname][k][self.raid_data[rname][k][0]-1]
+                    if h > 0 and h <= v:
+                        self.raid_data[rname][""][2].config(text="{} {} since the last {}".format(v-h, r, k.capitalize()))
+                    else:
+                        self.raid_data[rname][""][2].config(text="")
+                else:
+                    self.raid_data[rname][""][2].config(text="")
+            else:
+                self.raid_data[rname][""][2].config(text="")
+            # update each button values and percentage
             for k, v in self.raid_data[rname].items():
                 if k == "": continue
                 i = v[0]
@@ -273,7 +301,8 @@ class Interface(Tk.Tk):
                     v[2].config(text="{:.2f}%".format(min(100, 100*float(i)/total)).replace('.00', ''))
                 else:
                     v[2].config(text="0%")
-                if rname in self.got_chest and len(v) == 4: # chest %
+                # chest percentage
+                if rname in self.got_chest and len(v) == 4:
                     if chest_count > 0:
                         v[3].config(text="{:.2f}%".format(min(100, 100*float(v[0])/chest_count)).replace('.00', ''))
                     else:
@@ -315,12 +344,35 @@ class Interface(Tk.Tk):
         try:
             with open("save.json", mode="r", encoding="utf-8") as f:
                 savedata = json.load(f)
-            return savedata, []
+            savedata = self.check_history(savedata)
+            if not self.cmpVer(self.version, savedata["version"]):
+                errors.append("Your save data comes from a more recent version. It might causses issues")
+            return savedata, errors
         except Exception as e:
             print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
             if "No such file or directory" not in str(e):
                 errors.append("Error while opening save.json: " + str(e))
             return None, errors
+
+    def check_history(self, savedata): # check the history in the savedata and updates it if needed
+        if 'history' not in savedata:
+            savedata["history"] = {}
+        for k, v in savedata.items():
+            if k in self.FORBIDDEN: continue
+            for x, y in v.items():
+                if x in self.RARES:
+                    if k not in savedata["history"]: savedata["history"][k] = {}
+                    if x not in savedata["history"][k]: savedata["history"][k][x] = []
+                    while len(savedata["history"][k][x]) < y:
+                        savedata["history"][k][x].insert(0, 0)
+        return savedata
+
+    def add_to_history(self, rname, iname, val, total): # add a new point in time to a raid history
+        if rname not in self.history: self.history[rname] = {}
+        if iname not in self.history[rname]: self.history[rname][iname] = []
+        while len(self.history[rname][iname]) < val: self.history[rname][iname].append(0)
+        if self.history[rname][iname][val-1] <= 0:
+            self.history[rname][iname][val-1] = total
 
     def apply_savedata(self, savedata : dict): # set raid labels, etc...
         errors = []
@@ -332,6 +384,7 @@ class Interface(Tk.Tk):
                 if k in self.raid_data and x in self.raid_data[k]:
                     self.raid_data[k][x][0] = y
                 else:
+                    self.history.pop(x, None)
                     if not missing:
                         missing = True
                         errors.append("Values from save.json don't seem in use anymore and will be discarded (Example: {})".format(k)) # warning
@@ -353,7 +406,7 @@ class Interface(Tk.Tk):
                     messagebox.showerror("Error", "An error occured while saving:\n"+str(e))
 
     def get_save_data(self): # build the save data (as seen in save.json) and return it
-        savedata = {"version":self.version, "last":self.last_tab, "settings":self.settings} # version string in case I change the format later, for retrocompatibility and stuff
+        savedata = {"version":self.version, "last":self.last_tab, "settings":self.settings, "history":self.history}
         for k, v in self.raid_data.items():
             savedata[k] = {}
             for x, y in v.items():
