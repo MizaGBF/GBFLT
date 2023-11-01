@@ -263,12 +263,14 @@ class Interface(Tk.Tk):
 
     def reset(self, rname : str): # raid name
         if Tk.messagebox.askquestion(title="Reset", message="Do you want to reset this tab?") == "yes": #ask for confirmation to avoid  accidental data reset
-              if rname in self.raid_data:
-                 self.last_tab = rname
-                 for k in self.raid_data[rname]:
-                     self.raid_data[rname][k][0] = 0
-                 self.modified = True
-                 self.update_label(rname)
+            if rname in self.raid_data:
+                self.last_tab = rname
+                for k in self.raid_data[rname]:
+                    self.raid_data[rname][k][0] = 0
+                try: del self.history[rname]
+                except: pass
+                self.modified = True
+                self.update_label(rname)
 
     def update_label(self, rname : str): # raid name
         if rname in self.raid_data:
@@ -363,16 +365,17 @@ class Interface(Tk.Tk):
                 if x in self.RARES:
                     if k not in savedata["history"]: savedata["history"][k] = {}
                     if x not in savedata["history"][k]: savedata["history"][k][x] = []
-                    while len(savedata["history"][k][x]) < y:
+                    while len(savedata["history"][k][x]) < y: # add data if missing (for prior versions)
                         savedata["history"][k][x].insert(0, 0)
+                    if len(savedata["history"][k][x]) > y: # remove extra data
+                        savedata["history"][k][x] = savedata["history"][k][x][:y]
         return savedata
 
     def add_to_history(self, rname, iname, val, total): # add a new point in time to a raid history
         if rname not in self.history: self.history[rname] = {}
         if iname not in self.history[rname]: self.history[rname][iname] = []
         while len(self.history[rname][iname]) < val: self.history[rname][iname].append(0)
-        if self.history[rname][iname][val-1] <= 0:
-            self.history[rname][iname][val-1] = total
+        self.history[rname][iname][val-1] = total
 
     def apply_savedata(self, savedata : dict): # set raid labels, etc...
         errors = []

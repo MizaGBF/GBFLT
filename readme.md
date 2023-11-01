@@ -1,5 +1,5 @@
 # Granblue Fantasy Loot Tracker  
-* GUI to track your gold bar and sand drops in [Granblue Fantasy](https://game.granbluefantasy.jp).  
+* GUI to track your Gold Bar and Sand Drops in [Granblue Fantasy](https://game.granbluefantasy.jp).  
 ![Tracker Preview 1](https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/preview1.png)  
   
 ### Features  
