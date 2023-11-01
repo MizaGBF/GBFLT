@@ -545,14 +545,14 @@ class Interface(Tk.Tk):
                 add = ""
                 for x, y in self.history[k].items():
                     if len(y) == 0: continue
-                    add += "- {}: ".format(x)
+                    add += "- {} at: ".format(x)
                     for e in y:
                         if e <= 0: add += "?, "
                         else: add += "{}, ".format(e)
                     add = add[:-2]
                     add += "\r\n"
                 if add != "":
-                    report += "History:\r\n" + add
+                    report += "Drop History:\r\n" + add
             report += "\r\n"
         with open("drop_export_{}.txt".format(today.strftime("%m-%d-%Y_%H-%M-%S.%f")), mode="w", encoding="utf-8") as f:
             f.write(report)
