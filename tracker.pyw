@@ -15,6 +15,7 @@ from io import BytesIO
 import os
 import copy
 from typing import Callable, Optional
+from datetime import datetime
 import traceback
 
 class Interface(Tk.Tk):
@@ -127,6 +128,7 @@ class Interface(Tk.Tk):
         self.make_button(tab, "Layout Editor  ", self.open_layout_editor, 1, 0, 3, "we", ("others", "layout", (20, 20)))
         self.make_button(tab, "Restart the App", self.restart, 2, 0, 3, "we", ("others", "restart", (20, 20)))
         self.make_button(tab, "Open Statistics", self.stats, 3, 0, 3, "we", ("others", "stats", (20, 20)))
+        self.make_button(tab, "Export to Text", self.export_to_text, 4, 0, 3, "we", ("others", "export", (20, 20)))
         self.make_button(tab, "Github Repository", self.github, 0, 3, 3, "we", ("others", "github", (20, 20)))
         self.make_button(tab, "Bug Report        ", self.github_issue, 1, 3, 3, "we", ("others", "bug", (20, 20)))
         self.make_button(tab, "Check Updates   ", lambda : self.check_new_update(False), 2, 3, 3, "we", ("others", "update", (20, 20)))
@@ -525,6 +527,36 @@ class Interface(Tk.Tk):
 
     def github_issue(self): # open the github repo on the issues page
         webbrowser.open("https://github.com/MizaGBF/GBFLT/issues", new=2, autoraise=True)
+
+    def export_to_text(self): # export data to text
+        today = datetime.now()
+        report = "GBFLT {} - Loot Data Export\r\n{}\r\n\r\n".format(self.version, today.strftime("%d/%m/%Y %H:%M:%S"))
+        for k, v in self.raid_data.items():
+            if v[""][0] == 0: continue
+            report += "### Raid {:} - {:,} times\r\n".format(k, v[""][0])
+            cname = self.got_chest.get(k, "")
+            total = v[cname][0]
+            for x, y in v.items():
+                if x == "": continue
+                report += "- {:} - {:,} times".format(x, y[0])
+                if x != cname: report += " ({:.2f}%)".format(100*y[0]/total).replace(".00", "")
+                report += "\r\n"
+            if k in self.history:
+                add = ""
+                for x, y in self.history[k].items():
+                    if len(y) == 0: continue
+                    add += "- {}: ".format(x)
+                    for e in y:
+                        if e <= 0: add += "?, "
+                        else: add += "{}, ".format(e)
+                    add = add[:-2]
+                    add += "\r\n"
+                if add != "":
+                    report += "History:\r\n" + add
+            report += "\r\n"
+        with open("drop_export_{}.txt".format(today.strftime("%m-%d-%Y_%H-%M-%S.%f")), mode="w", encoding="utf-8") as f:
+            f.write(report)
+        messagebox.showinfo("Info", "Data exported to: drop_export_{}.txt".format(today.strftime("%m-%d-%Y_%H-%M-%S.%f")))
 
 class StatScreen(Tk.Toplevel): # stats window
     WIDTH=4
