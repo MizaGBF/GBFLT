@@ -10,6 +10,10 @@ import webbrowser
 from contextlib import contextmanager
 import subprocess
 import sys
+import zipfile
+from io import BytesIO
+import os
+import copy
 from typing import Callable, Optional
 import traceback
 
@@ -323,14 +327,94 @@ class Interface(Tk.Tk):
             with urllib.request.urlopen("https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/manifest.json") as url:
                 data = json.loads(url.read().decode("utf-8"))
             if "version" in data and self.version != "0.0" and not self.cmpVer(self.version, data["version"]):
-                if Tk.messagebox.askquestion(title="Update", message="An update is available.\nCurrent version: {}\nNew Version: {}\nOpen the Github page?".format(self.version, data["version"])) == "yes":
-                    webbrowser.open("https://github.com/MizaGBF/GBFLT", new=2, autoraise=True)
+                if Tk.messagebox.askquestion(title="Update", message="An update is available.\nCurrent version: {}\nNew Version: {}\nDo you want to download and install?\n- 'save.json' and 'assets/raids.json' will be kept intact.\n- Other files will be overwritten.".format(self.version, data["version"])) == "yes":
+                    self.auto_update()
             elif not silent:
-                messagebox.showinfo("Update", "This copy of GBFLT is up-to-date.")
+                messagebox.showinfo("Update", "GBF Loot Tracker is up-to-date.")
         except Exception as e:
             print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
             if not silent:
                 messagebox.showerror("Error", "An error occured while checking for new updates.\nTry again later or check manually.")
+
+    def auto_update(self):
+        try:
+            with urllib.request.urlopen("https://github.com/MizaGBF/GBFLT/archive/refs/heads/main.zip") as url:
+                data = url.read()
+            with BytesIO(data) as zip_content:
+                with zipfile.ZipFile(zip_content, 'r') as zip_ref:
+                    # list files
+                    folders = set()
+                    file_list = zip_ref.namelist()
+                    for file in file_list:
+                        folders.add("/".join(file.split('/')[1:-1]))
+                    # make folders (if missing)
+                    for path in folders:
+                        if path == "": continue
+                        os.makedirs(os.path.dirname(path if path.endswith("/") else path+"/"), exist_ok=True)
+                    # write files
+                    for file in file_list:
+                        if file.split("/")[-1] in ["raids.json", "save.json"] or file.endswith("/"): continue
+                        path = "/".join(file.split('/')[1:])
+                        with open(path, mode="wb") as f:
+                            f.write(zip_ref.read(file))
+                    # update raids.json
+                    try:
+                        with open('assets/raids.json', mode='r', encoding='utf-8') as f:
+                            old = json.load(f)
+                        # list known raids
+                        changes = ""
+                        for file in file_list:
+                            if file.endswith("raids.json"):
+                                # load new json
+                                try:
+                                    new = json.loads(zip_ref.read(file).decode('utf-8'))
+                                except:
+                                    new = None
+                                if new is not None:
+                                    # tab check
+                                    for tn in new:
+                                        found = False
+                                        for i in range(len(old)):
+                                            if old[i]["text"] == tn["text"]:
+                                                found = True
+                                                break
+                                        if found: # tab exists
+                                            for rn in tn["raids"]:
+                                                if rn["text"] not in self.raid_data:
+                                                    old[i]["raids"].append(copy.deepcopy(rn))
+                                                    changes += "Adding Raid '{}' to Tab '{}'\n".format(rn["text"], tn["text"])
+                                        else: # tab doesn't exist
+                                            new_tab = copy.deepcopy(tn)
+                                            new_tab["raids"] = []
+                                            for rn in tn["raids"]:
+                                                if rn["text"] not in self.raid_data:
+                                                    new_tab["raids"].append(copy.deepcopy(rn))
+                                            if len(new_tab["raids"]) > 0:
+                                                old.append(new_tab)
+                                                changes += "Adding Tab '{}'\n".format(tn["text"])
+                                    if changes != "" and Tk.messagebox.askquestion(title="Update", message="Differences have been detected between your 'assets/raids.json' and the one from the latest version:\n" + changes + "\nDo you want to apply those differences to your 'assets/raids.json'?") == "yes":
+                                        try:
+                                            json.dumps(str(old)) # check for validity
+                                            with open('assets/raids.json', mode='w', encoding='utf-8') as f:
+                                                json.dump(old, f, indent=4, ensure_ascii=False)
+                                            messagebox.showinfo("Update", "'assets/raids.json' updated.\nUse the Layout Editor to make further modifications.")
+                                        except Exception as ee:
+                                            print("".join(traceback.format_exception(type(ee), ee, ee.__traceback__)))
+                                            messagebox.showerror("Error", "Couldn't update 'assets/raids.json', it has been left untouched:\n" + str(ee))
+                                break
+                    except:
+                        if Tk.messagebox.askquestion(title="Update", message="An error occured while attempting to detect differences between your 'assets/raids.json' and the one from the latest version.\nDo you want to replace your 'assets/raids.json' with the new one?") == "yes":
+                            for file in file_list:
+                                if file.endswith("raids.json"):
+                                    new = json.loads(zip_ref.read(file).decode('utf-8'))
+                                    with open('assets/raids.json', mode='w', encoding='utf-8') as f:
+                                        json.dump(new, f, indent=4, ensure_ascii=False)
+                                    break
+            messagebox.showinfo("Update", "Update successful.\nThe application will now restart.")
+            self.restart()
+        except Exception as e:
+            print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
+            messagebox.showerror("Error", "An error occured while downloading or installing the update:\n" + str(e))
 
     def load_manifest(self): # load data from manifest.json (only the version number for now)
         try:

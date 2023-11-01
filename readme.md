@@ -15,9 +15,11 @@
 * New to Github? Click the Green `Code` button at the top of this page, then "Download ZIP" to download this repository.  
   
 ### Update  
-* Backup your `save.json` and `assets/raids.json` (if customized) files.  
+Simply use the built-in Updater under the `Settings` tab.  
+If it doesn't work or if you want to manually update:  
+* Backup your `save.json` and any other files you might have modified (such as `assets/raids.json`).  
 * Download and overwrite your current GBFLT copy with the new one.  
-* Put your `save.json` and `assets/raids.json` files back in place (overwrite, if asked).  
+* Put your backed up `save.json` (and other files) back in place (overwrite, if asked).  
   
 ### Usage  
 * Simply double-click on `tracker.pyw`, assuming Python is installed correctly.  

@@ -237,7 +237,7 @@ class Editor(Tk.Tk): # note: this script take some elements from tracker.pyw
         try:
             with open("raids.json", mode="w", encoding="utf-8") as f:
                 json.dump(self.layout, f, indent=4, ensure_ascii=False)
-            messagebox.showinfo("Info", "'raids.json' updated with success.\nRestart GBFLT to check the changes.\nNote: If you removed or renamed a raid, its data might be deleted from 'save.json'.")
+            messagebox.showinfo("Info", "'raids.json' updated with success.\nRestart GBF Loot Tracker to check the changes.\nNote: If you removed or renamed a raid, its data might be deleted from 'save.json'.")
             self.layout_string = str(self.layout)
             return True
         except Exception as e:
