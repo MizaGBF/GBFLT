@@ -213,8 +213,12 @@ class Interface(Tk.Tk):
     def toggle_topmost(self): # toggle always on top option
         self.modified = True
         self.settings["top_most"] = self.top_most.get()
-        if self.settings["top_most"] == 1: self.attributes('-topmost', True)
-        else: self.attributes('-topmost', False)
+        if self.settings["top_most"] == 1:
+            self.attributes('-topmost', True)
+            if self.stats_window is not None: self.stats_window.attributes('-topmost', True)
+        else:
+            self.attributes('-topmost', False)
+            if self.stats_window is not None: self.stats_window.attributes('-topmost', False)
 
     def toggle_theme(self): # toggle the theme
         try:
@@ -582,6 +586,8 @@ class StatScreen(Tk.Toplevel): # stats window
         self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
         self.defaultfont = tkFont.nametofont('TkDefaultFont').actual() # used to make top label bold
         self.update_data()
+        if self.parent.settings.get("top_most", 0) == 1:
+            self.attributes('-topmost', True)
 
     def update_data(self): # update the data shown on the window
         # cleanup
