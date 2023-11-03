@@ -611,7 +611,7 @@ class Interface(Tk.Tk):
                 try:
                     with open("save.json", mode="w", encoding="utf-8") as f:
                         json.dump(savedata, f)
-                    self.push_notif("Changes has been saved")
+                    self.push_notif("Changes have been saved")
                 except Exception as e:
                     print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
                     messagebox.showerror("Error", "An error occured while saving:\n"+str(e))
