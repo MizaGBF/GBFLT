@@ -36,7 +36,7 @@ If it doesn't work or if you want to manually update:
 * `L`: Toggle the Light and Dark themes.  
 * `E`: Open the Layout Editor.  
 * `R`: Restart the application.  
-* `U`: Toggle the `Always on top` settings.  
+* `U`: Check for updates.  
 * `Page Up` or `Up`: Go to the top tab on the left.  
 * `Page Down` or `Down`: Go to the top tab on the right.  
 * `Left`: Go to the raid on the left.  
