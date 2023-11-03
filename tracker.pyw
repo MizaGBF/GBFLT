@@ -34,9 +34,8 @@ class Interface(Tk.Tk):
         errors += rerrors
         self.history = {} if savedata is None else savedata.get("history", {})
         self.settings = {} if savedata is None else savedata.get("settings", {})
-        self.current_theme = self.settings.get("theme", self.THEME[0])
         self.call('source', 'assets/themes/main.tcl')
-        self.call("set_theme", self.current_theme)
+        self.call("set_theme", self.settings.get("theme", self.THEME[0]))
         self.title("GBF Loot Tracker v" + self.version)
         self.iconbitmap('assets/icon.ico')
         self.resizable(width=False, height=False) # not resizable
@@ -132,8 +131,14 @@ class Interface(Tk.Tk):
         self.make_button(tab, "Github Repository", self.github, 0, 3, 3, "we", ("others", "github", (20, 20)))
         self.make_button(tab, "Bug Report        ", self.github_issue, 1, 3, 3, "we", ("others", "bug", (20, 20)))
         self.make_button(tab, "Check Updates   ", lambda : self.check_new_update(False), 2, 3, 3, "we", ("others", "update", (20, 20)))
+        # check boxes
+        self.top_most = Tk.IntVar()
+        ttk.Checkbutton(tab, text='Always on top', variable=self.top_most, command=self.toggle_topmost).grid(row=0, column=6, columnspan=1, sticky="we")
+        self.top_most.set(self.settings.get("top_most", 0))
+        if self.settings.get("top_most", 0) == 1:
+            self.attributes('-topmost', True)
         self.check_update = Tk.IntVar()
-        ttk.Checkbutton(tab, text='Auto Check Updates', variable=self.check_update, command=self.toggle_checkupdate).grid(row=3, column=3, columnspan=4, sticky="we")
+        ttk.Checkbutton(tab, text='Auto Check Updates', variable=self.check_update, command=self.toggle_checkupdate).grid(row=1, column=6, columnspan=1, sticky="we")
         self.check_update.set(self.settings.get("check_update", 0))
         
         # end
@@ -205,17 +210,22 @@ class Interface(Tk.Tk):
         self.modified = True
         self.settings["check_update"] = self.check_update.get()
 
+    def toggle_topmost(self): # toggle always on top option
+        self.modified = True
+        self.settings["top_most"] = self.top_most.get()
+        if self.settings["top_most"] == 1: self.attributes('-topmost', True)
+        else: self.attributes('-topmost', False)
+
     def toggle_theme(self): # toggle the theme
         try:
             for i in range(len(self.THEME)): # search the theme
-                if self.THEME[i] == self.current_theme:
-                    self.current_theme = self.THEME[(i+1)%len(self.THEME)] # switch to the next one
-                    self.call("set_theme", self.current_theme)
-                    self.settings["theme"] = self.current_theme
+                if self.THEME[i] == self.settings["theme"]:
+                    self.settings["theme"]= self.THEME[(i+1)%len(self.THEME)] # switch to the next one
+                    self.call("set_theme", self.settings["theme"])
                     self.modified = True
                     return
             # not found
-            self.current_theme = self.THEME[-1]
+            self.settings["theme"] = self.THEME[-1]
             self.toggle_theme()
         except Exception as e:
             print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
