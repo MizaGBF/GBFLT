@@ -7,7 +7,10 @@
 * No third-party dependencies required.  
 * Light and Dark themes based on [the Azure TTK Theme](https://github.com/rdbende/Azure-ttk-theme).  
 * Customizable layout.  
+* Keyboard shortcuts.  
 * Global statistics.  
+* Auto updater.  
+* and more...  
 ![Tracker Preview 2](https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/preview2.png)  
   
 ### Installation  
