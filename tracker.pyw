@@ -132,6 +132,7 @@ class Interface(Tk.Tk):
         self.make_button(tab, "Github Repository", self.github, 0, 3, 3, "we", ("others", "github", (20, 20)))
         self.make_button(tab, "Bug Report        ", self.github_issue, 1, 3, 3, "we", ("others", "bug", (20, 20)))
         self.make_button(tab, "Check Updates   ", lambda : self.check_new_update(False), 2, 3, 3, "we", ("others", "update", (20, 20)))
+        self.make_button(tab, "Shortcut List       ", self.show_shortcut, 3, 3, 3, "we", ("others", "shortcut", (20, 20)))
         # check boxes
         self.show_notif = Tk.IntVar()
         ttk.Checkbutton(tab, text='Show notifications', variable=self.show_notif, command=self.toggle_notif).grid(row=0, column=6, columnspan=1, sticky="we")
@@ -652,6 +653,9 @@ class Interface(Tk.Tk):
     def github_issue(self): # open the github repo on the issues page
         webbrowser.open("https://github.com/MizaGBF/GBFLT/issues", new=2, autoraise=True)
         self.push_notif("Link opened in your broswer")
+
+    def show_shortcut(self):
+        messagebox.showinfo("Keyboard Shortcuts", "- T: Toggle the Always on top settings.\n- S: Toggle the Statistics window.\n- L: Toggle the Light and Dark themes.\n- E: Open the Layout Editor.\n- R: Restart the application.\n- U: Check for updates.\n- Page Up or Up: Go to the top tab on the left.\n- Page Down or Down: Go to the top tab on the right.\n- Left: Go to the raid on the left.\n- Right: Go to the raid on the right.\n- Shit+F1~F12: Set the current raid to the Function Key pressed.\n- F1~F12: Go to the raid associated to this Function key.")
 
     def export_to_text(self): # export data to text
         today = datetime.now()
