@@ -30,6 +30,18 @@ If it doesn't work or if you want to manually update:
 * The chest buttons (if present) modify the total chest obtained. It's also modified if another item is modified.  
 * The values are saved every minute or on exit, if they have been modified.  
   
+### Keyboard Shortcuts  
+* `T`: Toggle the `Always on top` settings.  
+* `S`: Toggle the Statistics window.  
+* `L`: Toggle the Light and Dark themes.  
+* `E`: Open the Layout Editor.  
+* `R`: Restart the application.  
+* `U`: Toggle the `Always on top` settings.  
+* `Page Up` or `Up`: Go to the top tab on the left.  
+* `Page Down` or `Down`: Go to the top tab on the right.  
+* `Left`: Go to the raid on the left.  
+* `Right`: Go to the raid on the right.  
+
 ### Bug?  
 Open an issue or contact me directly.  
   

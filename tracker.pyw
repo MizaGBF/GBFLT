@@ -122,7 +122,6 @@ class Interface(Tk.Tk):
         tab = ttk.Frame(self.top_tab)
         self.top_tab.add(tab, text="Settings")
         self.top_tab.tab(tab, image=self.load_asset("assets/others/settings.png", (20, 20)), compound=Tk.LEFT)
-        raid_tabs = ttk.Notebook(tab)
         self.make_button(tab, "Toggle Theme", self.toggle_theme, 0, 0, 3, "we", ("others", "theme", (20, 20)))
         self.make_button(tab, "Layout Editor  ", self.open_layout_editor, 1, 0, 3, "we", ("others", "layout", (20, 20)))
         self.make_button(tab, "Restart the App", self.restart, 2, 0, 3, "we", ("others", "restart", (20, 20)))
@@ -140,6 +139,15 @@ class Interface(Tk.Tk):
         self.check_update = Tk.IntVar()
         ttk.Checkbutton(tab, text='Auto Check Updates', variable=self.check_update, command=self.toggle_checkupdate).grid(row=1, column=6, columnspan=1, sticky="we")
         self.check_update.set(self.settings.get("check_update", 0))
+        
+        # shortcut
+        for k in ['<t>', '<T>']:  self.bind(k, self.key_toggle_topmost)
+        for k in ['<s>', '<S>']: self.bind(k, self.key_toggle_stat)
+        for k in ['<l>', '<L>']: self.bind(k, self.key_toggle_theme)
+        for k in ['<e>', '<E>']: self.bind(k, self.key_open_editor)
+        for k in ['<r>', '<R>']: self.bind(k, self.key_restart)
+        for k in ['<u>', '<U>']: self.bind(k, self.key_update)
+        for k in ['<Prior>', '<Next>', '<Left>', '<Right>', '<Up>', '<Down>']: self.bind(k, self.key_page)
         
         # end
         self.top_tab.grid(row=0, column=0, columnspan=10, sticky="wnes")
@@ -180,6 +188,48 @@ class Interface(Tk.Tk):
                     return self.assets['__dummy_photo_image__'+str(size)]
                 except Exception as e:
                     print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
+
+    def key_toggle_topmost(self, ev): # shortcut to toggle top most option
+        self.top_most.set(not self.top_most.get())
+        self.toggle_topmost()
+
+    def key_toggle_stat(self, ev): # shortcut to toggle stat window
+        if self.stats_window is None: self.stats()
+        else: self.stats_window.close()
+
+    def key_toggle_theme(self, ev): # shortcut to toggle theme
+        self.toggle_theme()
+
+    def key_open_editor(self, ev): # shortcut to open the layout editor
+        self.open_layout_editor()
+
+    def key_restart(self, ev): # shortcut to restart the app
+        self.restart()
+
+    def key_update(self, ev): # shortcut to check for update
+        self.check_new_update(False)
+
+    def key_page(self, ev):
+        top_pos = self.top_tab.index("current")
+        top_len = len(self.top_tab.winfo_children())
+        current_tab = self.top_tab.nametowidget(self.top_tab.select()).winfo_children()[0]
+        match ev.keycode:
+            case 33|38: #PGUP or UP
+                self.top_tab.select((top_pos - 1 + top_len) % top_len)
+            case 34|40: #PGDOWN or DOWN
+                self.top_tab.select((top_pos + 1) % top_len)
+            case 37: #LEFT
+                if isinstance(current_tab, ttk.Notebook):
+                    sub_pos = current_tab.index("current")
+                    sub_len = len(current_tab.winfo_children())
+                    current_tab.select((sub_pos - 1 + sub_len) % sub_len)
+            case 39: #RIGHT
+                if isinstance(current_tab, ttk.Notebook):
+                    sub_pos = current_tab.index("current")
+                    sub_len = len(current_tab.winfo_children())
+                    current_tab.select((sub_pos +1) % sub_len)
+            case _:
+                pass
 
     def run(self): # main loop
         count = 0
