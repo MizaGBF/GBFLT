@@ -41,6 +41,8 @@ If it doesn't work or if you want to manually update:
 * `Page Down` or `Down`: Go to the top tab on the right.  
 * `Left`: Go to the raid on the left.  
 * `Right`: Go to the raid on the right.  
+* `Shit+F1~F12`: Set the current raid to the Function Key pressed.  
+* `F1~F12`: Go to the raid associated to this Function key.  
 
 ### Bug?  
 Open an issue or contact me directly.  

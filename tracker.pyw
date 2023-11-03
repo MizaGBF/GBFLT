@@ -21,8 +21,9 @@ import traceback
 class Interface(Tk.Tk):
     CHESTS = ["wood", "silver", "gold", "red", "blue", "purple"] # chest list
     RARES = ["bar", "sand"] # rare item
-    FORBIDDEN = ["version", "last", "settings", "history"] # forbidden raid name list
-    THEME = ["light", "dark"]
+    FORBIDDEN = ["version", "last", "settings", "history", "favorites"] # forbidden raid name list
+    THEME = ["light", "dark"] # existing themes
+    NOTIF_THRESHOLD = 200 # frame before the notification is deleted
     def __init__(self):
         Tk.Tk.__init__(self,None)
         self.parent = None
@@ -32,6 +33,7 @@ class Interface(Tk.Tk):
         errors = self.load_manifest()
         savedata, rerrors = self.load_savedata()
         errors += rerrors
+        self.favorites = [] if savedata is None else savedata.get("favorites", [])
         self.history = {} if savedata is None else savedata.get("history", {})
         self.settings = {} if savedata is None else savedata.get("settings", {})
         self.call('source', 'assets/themes/main.tcl')
@@ -49,7 +51,7 @@ class Interface(Tk.Tk):
         data, rerrors = self.load_raids()
         errors += rerrors
         
-        tab_tree = {} # used to memorize the tab structure, to set the active tab after loading
+        self.tab_tree = {} # used to memorize the tab structure, to set the active tab after loading
         self.top_tab = ttk.Notebook(self)
         for ti, t in enumerate(data): # top tabs
             tab = ttk.Frame(self.top_tab)
@@ -66,7 +68,7 @@ class Interface(Tk.Tk):
                     if rn in self.FORBIDDEN:
                         errors.append("Raid name {} is forbidden in Tab '{}'".format(rn, ti))
                     else:
-                        tab_tree[rn] = (ti, c, raid_tabs)
+                        self.tab_tree[rn] = (ti, c, raid_tabs)
                         self.raid_data[rn] = {}
                         sub = ttk.Frame(raid_tabs)
                         raid_tabs.add(sub, text=rn)
@@ -131,13 +133,16 @@ class Interface(Tk.Tk):
         self.make_button(tab, "Bug Report        ", self.github_issue, 1, 3, 3, "we", ("others", "bug", (20, 20)))
         self.make_button(tab, "Check Updates   ", lambda : self.check_new_update(False), 2, 3, 3, "we", ("others", "update", (20, 20)))
         # check boxes
+        self.show_notif = Tk.IntVar()
+        ttk.Checkbutton(tab, text='Show notifications', variable=self.show_notif, command=self.toggle_notif).grid(row=0, column=6, columnspan=1, sticky="we")
+        self.show_notif.set(self.settings.get("show_notif", 0))
         self.top_most = Tk.IntVar()
-        ttk.Checkbutton(tab, text='Always on top', variable=self.top_most, command=self.toggle_topmost).grid(row=0, column=6, columnspan=1, sticky="we")
+        ttk.Checkbutton(tab, text='Always on top', variable=self.top_most, command=self.toggle_topmost).grid(row=1, column=6, columnspan=1, sticky="we")
         self.top_most.set(self.settings.get("top_most", 0))
         if self.settings.get("top_most", 0) == 1:
             self.attributes('-topmost', True)
         self.check_update = Tk.IntVar()
-        ttk.Checkbutton(tab, text='Auto Check Updates', variable=self.check_update, command=self.toggle_checkupdate).grid(row=1, column=6, columnspan=1, sticky="we")
+        ttk.Checkbutton(tab, text='Auto Check Updates', variable=self.check_update, command=self.toggle_checkupdate).grid(row=2, column=6, columnspan=1, sticky="we")
         self.check_update.set(self.settings.get("check_update", 0))
         
         # shortcut
@@ -148,12 +153,19 @@ class Interface(Tk.Tk):
         for k in ['<r>', '<R>']: self.bind(k, self.key_restart)
         for k in ['<u>', '<U>']: self.bind(k, self.key_update)
         for k in ['<Prior>', '<Next>', '<Left>', '<Right>', '<Up>', '<Down>']: self.bind(k, self.key_page)
+        for i in range(1, 13): self.bind('<Shift-F{}>'.format(i), self.key_set_fav)
+        for i in range(1, 13): self.bind('<F{}>'.format(i), self.key_select_fav)
+        
+        # notification
+        self.notification_counter = 0
+        self.notification = Tk.Label(self, text="")
+        if self.settings.get("show_notif", 0) == 1: self.notification.grid(row=1, column=0, sticky="w")
         
         # end
         self.top_tab.grid(row=0, column=0, columnspan=10, sticky="wnes")
         if savedata is not None: self.apply_savedata(savedata)
-        if self.last_tab in tab_tree:
-            t = tab_tree[self.last_tab]
+        if self.last_tab in self.tab_tree:
+            t = self.tab_tree[self.last_tab]
             self.top_tab.select(t[0]) # select top tab
             t[2].select(t[1]) # select sub tab on stored notebook
         if len(errors) > 0:
@@ -189,27 +201,27 @@ class Interface(Tk.Tk):
                 except Exception as e:
                     print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
 
-    def key_toggle_topmost(self, ev): # shortcut to toggle top most option
+    def key_toggle_topmost(self, ev : Tk.Event): # shortcut to toggle top most option
         self.top_most.set(not self.top_most.get())
         self.toggle_topmost()
 
-    def key_toggle_stat(self, ev): # shortcut to toggle stat window
+    def key_toggle_stat(self, ev : Tk.Event): # shortcut to toggle stat window
         if self.stats_window is None: self.stats()
         else: self.stats_window.close()
 
-    def key_toggle_theme(self, ev): # shortcut to toggle theme
+    def key_toggle_theme(self, ev : Tk.Event): # shortcut to toggle theme
         self.toggle_theme()
 
-    def key_open_editor(self, ev): # shortcut to open the layout editor
+    def key_open_editor(self, ev : Tk.Event): # shortcut to open the layout editor
         self.open_layout_editor()
 
-    def key_restart(self, ev): # shortcut to restart the app
+    def key_restart(self, ev : Tk.Event): # shortcut to restart the app
         self.restart()
 
-    def key_update(self, ev): # shortcut to check for update
+    def key_update(self, ev : Tk.Event): # shortcut to check for update
         self.check_new_update(False)
 
-    def key_page(self, ev):
+    def key_page(self, ev : Tk.Event):  # key shortcut to change tabs
         top_pos = self.top_tab.index("current")
         top_len = len(self.top_tab.winfo_children())
         current_tab = self.top_tab.nametowidget(self.top_tab.select()).winfo_children()[0]
@@ -231,6 +243,29 @@ class Interface(Tk.Tk):
             case _:
                 pass
 
+    def key_set_fav(self, ev : Tk.Event): # set a favorite
+        while len(self.favorites) < 12: self.favorites.append(None) # set
+        index = ev.keycode-112
+        top_pos = self.top_tab.index("current")
+        current_tab = self.top_tab.nametowidget(self.top_tab.select()).winfo_children()[0]
+        if isinstance(current_tab, ttk.Notebook):
+            sub_pos = current_tab.index("current")
+            for k, v in self.tab_tree.items():
+                if v[0] == top_pos and v[1] == sub_pos:
+                    self.favorites[index] = k
+                    self.modified = True
+                    self.push_notif("'F{}' key set to '{}'".format(index+1, k))
+                    return
+
+    def key_select_fav(self, ev): # load a favorite
+        index = ev.keycode-112
+        try:
+            t = self.tab_tree[self.favorites[index]]
+            self.top_tab.select(t[0]) # select top tab
+            t[2].select(t[1]) # select sub tab on stored notebook
+        except:
+            pass
+
     def run(self): # main loop
         count = 0
         while self.apprunning:
@@ -239,6 +274,11 @@ class Interface(Tk.Tk):
             count += 1
             if count % 3000 == 0:
                 self.save()
+            self.notification_counter += 1
+            if self.notification_counter == self.NOTIF_THRESHOLD: # delete notification at threshold
+                self.notification.config(text="")
+            elif self.notification_counter > self.NOTIF_THRESHOLD:
+                self.notification_counter -= 1 # to not rish the value becoming super big
 
     def close(self): # called when we close the window
         self.apprunning = False
@@ -266,9 +306,24 @@ class Interface(Tk.Tk):
         if self.settings["top_most"] == 1:
             self.attributes('-topmost', True)
             if self.stats_window is not None: self.stats_window.attributes('-topmost', True)
+            self.push_notif("Windows will always be on top")
         else:
             self.attributes('-topmost', False)
             if self.stats_window is not None: self.stats_window.attributes('-topmost', False)
+            self.push_notif("Windows won't be on top")
+
+    def toggle_notif(self): # toggle for notifications
+        self.modified = True
+        self.settings["show_notif"] = self.show_notif.get()
+        if self.settings["show_notif"] == 1:
+            self.notification.grid(row=1, column=0, sticky="w")
+            self.push_notif("Notifications will appear here")
+        else:
+            self.notification.grid_forget()
+
+    def push_notif(self, text : str): # edit the notification label and reset the counter
+        self.notification.config(text=text)
+        self.notification_counter = 0
 
     def toggle_theme(self): # toggle the theme
         try:
@@ -276,6 +331,7 @@ class Interface(Tk.Tk):
                 if self.THEME[i] == self.settings["theme"]:
                     self.settings["theme"]= self.THEME[(i+1)%len(self.THEME)] # switch to the next one
                     self.call("set_theme", self.settings["theme"])
+                    self.push_notif("Theme set to '{}'".format(self.settings["theme"]))
                     self.modified = True
                     return
             # not found
@@ -341,6 +397,7 @@ class Interface(Tk.Tk):
                 except: pass
                 self.modified = True
                 self.update_label(rname)
+                self.push_notif("Raid '{}' has been reset".format(rname))
 
     def update_label(self, rname : str): # raid name
         if rname in self.raid_data:
@@ -554,12 +611,13 @@ class Interface(Tk.Tk):
                 try:
                     with open("save.json", mode="w", encoding="utf-8") as f:
                         json.dump(savedata, f)
+                    self.push_notif("Changes has been saved")
                 except Exception as e:
                     print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
                     messagebox.showerror("Error", "An error occured while saving:\n"+str(e))
 
     def get_save_data(self): # build the save data (as seen in save.json) and return it
-        savedata = {"version":self.version, "last":self.last_tab, "settings":self.settings, "history":self.history}
+        savedata = {"version":self.version, "last":self.last_tab, "settings":self.settings, "history":self.history, "favorites":self.favorites}
         for k, v in self.raid_data.items():
             savedata[k] = {}
             for x, y in v.items():
@@ -569,6 +627,7 @@ class Interface(Tk.Tk):
     def open_layout_editor(self): # open assets/layout_editor.pyw
         try:
             subprocess.Popen([sys.executable, "layout_editor.pyw"], cwd="assets")
+            self.push_notif("Layout Editor has been opened")
         except Exception as e:
             messagebox.showerror("Error", "An error occured while opening the Layout Editor:\n"+str(e))
 
@@ -588,9 +647,11 @@ class Interface(Tk.Tk):
 
     def github(self): # open the github repo
         webbrowser.open("https://github.com/MizaGBF/GBFLT", new=2, autoraise=True)
+        self.push_notif("Link opened in your broswer")
 
     def github_issue(self): # open the github repo on the issues page
         webbrowser.open("https://github.com/MizaGBF/GBFLT/issues", new=2, autoraise=True)
+        self.push_notif("Link opened in your broswer")
 
     def export_to_text(self): # export data to text
         today = datetime.now()
@@ -638,6 +699,7 @@ class StatScreen(Tk.Toplevel): # stats window
         self.update_data()
         if self.parent.settings.get("top_most", 0) == 1:
             self.attributes('-topmost', True)
+        self.parent.push_notif("Statistics opened")
 
     def update_data(self): # update the data shown on the window
         # cleanup
@@ -679,6 +741,7 @@ class StatScreen(Tk.Toplevel): # stats window
 
     def close(self): # called on close
         self.parent.stats_window = None
+        self.parent.push_notif("Statistics closed")
         self.destroy()
 
 if __name__ == "__main__": # entry point
