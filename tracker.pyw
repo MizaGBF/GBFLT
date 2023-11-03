@@ -90,7 +90,7 @@ class Interface(Tk.Tk):
                                 break
                         # texts
                         Tk.Label(sub, text="Total").grid(row=2, column=0)
-                        if chest is not None: Tk.Label(sub, text="Chest").grid(row=3, column=0)
+                        Tk.Label(sub, text="Chest" if chest is not None else "").grid(row=3, column=0)
                         # build button and label list
                         for i, l in enumerate(r.get("loot", [])):
                             if l.endswith(".png"): l = l[:-3] # strip extension to avoid possible weird behaviors
