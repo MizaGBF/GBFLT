@@ -350,7 +350,7 @@ class Interface(Tk.Tk):
         except Exception as e:
             print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
             if not silent:
-                messagebox.showerror("Error", "An error occured while checking for new updates.\nTry again later or check manually.")
+                messagebox.showerror("Error", "An error occured while checking for new updates.\nCheck your Firewall, Try again later or go to Github and update manually.")
 
     def auto_update(self):
         try:
