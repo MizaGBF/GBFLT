@@ -227,23 +227,20 @@ class Interface(Tk.Tk):
         top_pos = self.top_tab.index("current")
         top_len = len(self.top_tab.winfo_children())
         current_tab = self.top_tab.nametowidget(self.top_tab.select()).winfo_children()[0]
-        match ev.keycode:
-            case 33|38: #PGUP or UP
-                self.top_tab.select((top_pos - 1 + top_len) % top_len)
-            case 34|40: #PGDOWN or DOWN
-                self.top_tab.select((top_pos + 1) % top_len)
-            case 37: #LEFT
-                if isinstance(current_tab, ttk.Notebook):
-                    sub_pos = current_tab.index("current")
-                    sub_len = len(current_tab.winfo_children())
-                    current_tab.select((sub_pos - 1 + sub_len) % sub_len)
-            case 39: #RIGHT
-                if isinstance(current_tab, ttk.Notebook):
-                    sub_pos = current_tab.index("current")
-                    sub_len = len(current_tab.winfo_children())
-                    current_tab.select((sub_pos +1) % sub_len)
-            case _:
-                pass
+        if ev.keycode in [33, 38]:
+            self.top_tab.select((top_pos - 1 + top_len) % top_len)
+        elif ev.keycode in [34, 40]:
+            self.top_tab.select((top_pos + 1) % top_len)
+        if ev.keycode == 37:
+            if isinstance(current_tab, ttk.Notebook):
+                sub_pos = current_tab.index("current")
+                sub_len = len(current_tab.winfo_children())
+                current_tab.select((sub_pos - 1 + sub_len) % sub_len)
+        elif ev.keycode == 39:
+            if isinstance(current_tab, ttk.Notebook):
+                sub_pos = current_tab.index("current")
+                sub_len = len(current_tab.winfo_children())
+                current_tab.select((sub_pos +1) % sub_len)
 
     def key_set_fav(self, ev : Tk.Event): # set a favorite
         while len(self.favorites) < 12: self.favorites.append(None) # set
@@ -453,7 +450,11 @@ class Interface(Tk.Tk):
                 data = json.loads(url.read().decode("utf-8"))
             if "version" in data and self.version != "0.0" and not self.cmpVer(self.version, data["version"]):
                 if Tk.messagebox.askquestion(title="Update", message="An update is available.\nCurrent version: {}\nNew Version: {}\nDo you want to download and install?\n- 'save.json' and 'assets/raids.json' will be kept intact.\n- Other files will be overwritten.".format(self.version, data["version"])) == "yes":
-                    self.auto_update()
+                    if sys.version_info.major != 3 or sys.version_info.minor < 10:
+                        if messagebox.askquestion("Outdated Python", "Your python version is v{}.{}.\nAt least Python 3.10 is recommended.\nUninstall python and install a more recent version.\nOpen the download page?".format(sys.version_info.major, sys.version_info.minor)) == "yes":
+                            webbrowser.open("https://www.python.org/downloads/", new=2, autoraise=True)
+                    else:
+                        self.auto_update()
             elif not silent:
                 messagebox.showinfo("Update", "GBF Loot Tracker is up-to-date.")
         except Exception as e:
