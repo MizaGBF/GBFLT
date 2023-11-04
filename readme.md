@@ -18,7 +18,7 @@
 * New to Github? Click the Green `Code` button at the top of this page, then "Download ZIP" to download this repository.  
   
 ### Usage  
-* Simply double-click on `tracker.pyw`, assuming Python is installed correctly. If nothing happens, see the `Issues?` section below.  
+* Simply double-click on `tracker.pyw`, assuming Python is installed correctly. If nothing happens, see the `Issues` section below.  
 * Left Click on a button to increase the counter.  
 * Right Click on a button to decrease the counter.  
 * The reset button will reset the current tab.  
@@ -47,11 +47,15 @@ If it doesn't work or if you want to manually update:
 * `Shit+F1~F12`: Set the current raid to the Function Key pressed.  
 * `F1~F12`: Go to the raid associated to this Function key.  
   
-### Issues?  
+### Issues  
 If the application doesn't start at all, your Python version might be outdated.  
 Uninstall and install a more recent [version](https://www.python.org/downloads/).  
 You can also try to run `assets/troubleshooting.pyw` to see if it detects any problem.  
 Else, if you encountered a bug in the application itself, open an issue or contact me directly.  
+  
+### Support  
+Just drop a star on the top right corner of this page if you want to show your support.  
+If you have ideas that you want to implement or suggest, you can open a pull request for the former, and open an issue for the later.  
   
 ### Customization  
 The layout is fully editable.  
