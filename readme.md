@@ -110,7 +110,7 @@ If you need to edit `save.json`, the file is structured this way (for version 1.
     - "settings" key and an object, containing the states of various settings of the tracker.  
     - "history" key and an object containing:  
         - A raid name as a key and an object structured as:  
-            - A name of a rare item (either bar or sand are supported currently) and a list of integer. One of those integer represents at which total or chest count the item was dropped on. The list size must match the number of this item dropped. The tracker automatically set it to the appropriate size and fill with Zero (which means "Unknown") if needed.  
+            - A name of a rare item (either bar or sand are supported currently) and a list of integer. The integers represent the total or chest count at which the item was dropped on. The list size must match the number of this item dropped. The tracker automatically set it to the appropriate size and fill with Zero (which means "Unknown") if needed.  
     - "favorites" key and a list of twelve elements (one for each function key on a keyboard, up to F12 included). Elements are either the name of a raid associated to the function key, or `null` if not associated.  
-    - Each raid names as keys with an object as a value, containing the following:  
-        - An item name and its associated integer. If the item name is an empty string, it matches the raid button instead. The integer is the number of times that the item dropped or raid beaten.  
+    - Every raid names as keys with an object as a value, containing the following:  
+        - An item name and its associated integer. If the item name is an empty string, it matches the raid button instead. The integer is the number of times that the item dropped or the raid has been beaten.  
