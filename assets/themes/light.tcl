@@ -1,7 +1,7 @@
 package require Tk 8.6
 
 namespace eval ttk::theme::light {
-    variable version 2.0
+    variable version 2.1
     package provide ttk::theme::light $version
 
     ttk::style theme create light -parent clam -settings {

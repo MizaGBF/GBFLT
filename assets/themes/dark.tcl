@@ -1,7 +1,7 @@
 package require Tk 8.6
 
 namespace eval ttk::theme::dark {
-    variable version 2.0
+    variable version 2.1
     package provide ttk::theme::dark $version
 
     ttk::style theme create dark -parent clam -settings {

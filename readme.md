@@ -5,7 +5,7 @@
 ### Features  
 * Lightweight.  
 * No third-party dependencies required.  
-* Light and Dark themes based on [the Azure TTK Theme](https://github.com/rdbende/Azure-ttk-theme).  
+* Light and Dark themes based on the [Azure TTK Theme](https://github.com/rdbende/Azure-ttk-theme) and the [Forest TTK Theme](https://github.com/rdbende/Forest-ttk-theme).  
 * Customizable layout.  
 * Keyboard shortcuts.  
 * Global statistics.  

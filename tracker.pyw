@@ -22,7 +22,7 @@ class Interface(Tk.Tk):
     CHESTS = ["wood", "silver", "gold", "red", "blue", "purple"] # chest list
     RARES = ["bar", "sand"] # rare item
     FORBIDDEN = ["version", "last", "settings", "history", "favorites"] # forbidden raid name list
-    THEME = ["light", "dark"] # existing themes
+    THEME = ["light", "dark", "forest-light", "forest-dark"] # existing themes
     NOTIF_THRESHOLD = 200 # frame before the notification is deleted
     def __init__(self):
         Tk.Tk.__init__(self,None)
@@ -329,7 +329,7 @@ class Interface(Tk.Tk):
     def toggle_theme(self): # toggle the theme
         try:
             for i in range(len(self.THEME)): # search the theme
-                if self.THEME[i] == self.settings["theme"]:
+                if self.THEME[i] == self.settings.get("theme", self.THEME[0]):
                     self.settings["theme"]= self.THEME[(i+1)%len(self.THEME)] # switch to the next one
                     self.call("set_theme", self.settings["theme"])
                     self.push_notif("Theme set to '{}'".format(self.settings["theme"]))
@@ -672,6 +672,7 @@ class Interface(Tk.Tk):
 
     def show_changelog(self):
         changelog = [
+            "1.29 - Added the Forest TTK Themes. Bug fix: Impossible to change the theme on a fresh save file.",
             "1.28 - Added \"Credits\" and \"What's New?\" buttons.",
             "1.27 - Made the app temporarly python 3.9-friendly. Added a python version check during automatic updates, to avoid accidental bricking.",
             "1.26 - Added the \"Favorited\" button.",
@@ -681,12 +682,11 @@ class Interface(Tk.Tk):
             "1.22 - Added the \"Always on top\" setting.",
             "1.21 - Added the \"Export to Text\" button.",
             "1.20 - Added an automatic updater.",
-            "1.19 - Added tracking for bar and sand drops."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
     def show_credits(self):
-        messagebox.showinfo("Credits", "Author: Mizako\nContributors: Zell\nTesting: Slugi")
+        messagebox.showinfo("Credits", "Author: Mizako\nContributors: Zell\nTesting: Slugi\n\nVisual Themes:\nhttps://github.com/rdbende/Azure-ttk-theme\nhttps://github.com/rdbende/Forest-ttk-theme")
 
     def export_to_text(self): # export data to text
         today = datetime.now()
