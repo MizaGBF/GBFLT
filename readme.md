@@ -14,7 +14,7 @@
 ![Tracker Preview 2](https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/preview2.png)  
   
 ### Installation  
-* You only need [Python 3](https://www.python.org/downloads/) installed (It has been confirmed to work on Python 3.11 and higher).  
+* You only need [Python 3](https://www.python.org/downloads/) (version 3.10 or higher) installed.  
 * New to Github? Click the Green `Code` button at the top of this page, then "Download ZIP" to download this repository.  
   
 ### Update  

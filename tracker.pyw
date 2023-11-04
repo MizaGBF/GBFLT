@@ -450,7 +450,8 @@ class Interface(Tk.Tk):
                 data = json.loads(url.read().decode("utf-8"))
             if "version" in data and self.version != "0.0" and not self.cmpVer(self.version, data["version"]):
                 if Tk.messagebox.askquestion(title="Update", message="An update is available.\nCurrent version: {}\nNew Version: {}\nDo you want to download and install?\n- 'save.json' and 'assets/raids.json' will be kept intact.\n- Other files will be overwritten.".format(self.version, data["version"])) == "yes":
-                    if sys.version_info.major != 3 or sys.version_info.minor < 10:
+                    pver = data.get("python", "3.10").split(".")
+                    if sys.version_info.major != int(pver[0]) or sys.version_info.minor < int(pver[1]):
                         if messagebox.askquestion("Outdated Python", "Your python version is v{}.{}.\nAt least Python 3.10 is recommended.\nUninstall python and install a more recent version.\nOpen the download page?".format(sys.version_info.major, sys.version_info.minor)) == "yes":
                             webbrowser.open("https://www.python.org/downloads/", new=2, autoraise=True)
                     else:
