@@ -129,6 +129,8 @@ class Interface(Tk.Tk):
         self.make_button(tab, "Restart the App", self.restart, 2, 0, 3, "we", ("others", "restart", (20, 20)))
         self.make_button(tab, "Open Statistics", self.stats, 3, 0, 3, "we", ("others", "stats", (20, 20)))
         self.make_button(tab, "Export to Text", self.export_to_text, 4, 0, 3, "we", ("others", "export", (20, 20)))
+        self.make_button(tab, "What's New?   ", self.show_changelog, 5, 0, 3, "we", ("others", "new", (20, 20)))
+        self.make_button(tab, "Credits           ", self.show_credits, 6, 0, 3, "we", ("others", "credits", (20, 20)))
         self.make_button(tab, "Github Repository", self.github, 0, 3, 3, "we", ("others", "github", (20, 20)))
         self.make_button(tab, "Bug Report        ", self.github_issue, 1, 3, 3, "we", ("others", "bug", (20, 20)))
         self.make_button(tab, "Check Updates   ", lambda : self.check_new_update(False), 2, 3, 3, "we", ("others", "update", (20, 20)))
@@ -136,15 +138,15 @@ class Interface(Tk.Tk):
         self.make_button(tab, "Favorited           ", self.show_favorite, 4, 3, 3, "we", ("others", "favorite", (20, 20)))
         # check boxes
         self.show_notif = Tk.IntVar()
-        ttk.Checkbutton(tab, text='Show notifications', variable=self.show_notif, command=self.toggle_notif).grid(row=0, column=6, columnspan=1, sticky="we")
+        ttk.Checkbutton(tab, text='Show notifications', variable=self.show_notif, command=self.toggle_notif).grid(row=0, column=6, columnspan=5, sticky="we")
         self.show_notif.set(self.settings.get("show_notif", 0))
         self.top_most = Tk.IntVar()
-        ttk.Checkbutton(tab, text='Always on top', variable=self.top_most, command=self.toggle_topmost).grid(row=1, column=6, columnspan=1, sticky="we")
+        ttk.Checkbutton(tab, text='Always on top', variable=self.top_most, command=self.toggle_topmost).grid(row=1, column=6, columnspan=5, sticky="we")
         self.top_most.set(self.settings.get("top_most", 0))
         if self.settings.get("top_most", 0) == 1:
             self.attributes('-topmost', True)
         self.check_update = Tk.IntVar()
-        ttk.Checkbutton(tab, text='Auto Check Updates', variable=self.check_update, command=self.toggle_checkupdate).grid(row=2, column=6, columnspan=1, sticky="we")
+        ttk.Checkbutton(tab, text='Auto Check Updates', variable=self.check_update, command=self.toggle_checkupdate).grid(row=2, column=6, columnspan=5, sticky="we")
         self.check_update.set(self.settings.get("check_update", 0))
         
         # shortcut
@@ -667,6 +669,24 @@ class Interface(Tk.Tk):
             msg += "F{}: {}\n".format(i+1, self.favorites[i])
         msg += "\nUse Shift+F1~F12 on a raid tab to set.\nAnd then the F1~F12 key itself to go quickly to that raid."
         messagebox.showinfo("Favorited Raids", msg)
+
+    def show_changelog(self):
+        changelog = [
+            "1.28 - Added \"Credits\" and \"What's New?\" buttons.",
+            "1.27 - Made the app temporarly python 3.9-friendly. Added a python version check during automatic updates, to avoid accidental bricking.",
+            "1.26 - Added the \"Favorited\" button.",
+            "1.25 - Added the \"Shortcut List\" button. Fixed the \"Reset\" buttons position to the corner.",
+            "1.24 - Added the function keys binding to favorite raids, and the optional Notification bar.",
+            "1.23 - Added keyboard shortcuts.",
+            "1.22 - Added the \"Always on top\" setting.",
+            "1.21 - Added the \"Export to Text\" button.",
+            "1.20 - Added an automatic updater.",
+            "1.19 - Added tracking for bar and sand drops."
+        ]
+        messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
+
+    def show_credits(self):
+        messagebox.showinfo("Credits", "Author: Mizako\nContributors: Zell\nTesting: Slugi")
 
     def export_to_text(self): # export data to text
         today = datetime.now()

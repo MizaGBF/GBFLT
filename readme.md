@@ -46,7 +46,7 @@ If it doesn't work or if you want to manually update:
 * `Right`: Go to the raid on the right.  
 * `Shit+F1~F12`: Set the current raid to the Function Key pressed.  
 * `F1~F12`: Go to the raid associated to this Function key.  
-
+  
 ### Issues?  
 If the application doesn't start at all, your Python version might be outdated.  
 Uninstall and install a more recent [version](https://www.python.org/downloads/).  
