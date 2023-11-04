@@ -452,7 +452,7 @@ class Interface(Tk.Tk):
                 if Tk.messagebox.askquestion(title="Update", message="An update is available.\nCurrent version: {}\nNew Version: {}\nDo you want to download and install?\n- 'save.json' and 'assets/raids.json' will be kept intact.\n- Other files will be overwritten.".format(self.version, data["version"])) == "yes":
                     pver = data.get("python", "3.10").split(".")
                     if sys.version_info.major != int(pver[0]) or sys.version_info.minor < int(pver[1]):
-                        if messagebox.askquestion("Outdated Python", "Your python version is v{}.{}.\nAt least Python 3.10 is recommended.\nUninstall python and install a more recent version.\nOpen the download page?".format(sys.version_info.major, sys.version_info.minor)) == "yes":
+                        if messagebox.askquestion("Outdated Python", "Your python version is v{}.{}.\nAt least Python v{} is recommended.\nUninstall python and install a more recent version.\nOpen the download page?".format(sys.version_info.major, sys.version_info.minor, data.get("python", "3.10"))) == "yes":
                             webbrowser.open("https://www.python.org/downloads/", new=2, autoraise=True)
                     else:
                         self.auto_update()

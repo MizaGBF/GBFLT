@@ -50,7 +50,8 @@ If it doesn't work or if you want to manually update:
 ### Issues?  
 If the application doesn't start at all, your Python version might be outdated.  
 Uninstall and install a more recent [version](https://www.python.org/downloads/).  
-Else, if you encounter a bug in the app itself, open an issue or contact me directly.  
+You can also try to run `assets/troubleshooting.pyw` to see if it detects any problem.  
+Else, if you encountered a bug in the application itself, open an issue or contact me directly.  
   
 ### Customization  
 The layout is fully editable.  
