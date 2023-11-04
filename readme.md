@@ -97,3 +97,20 @@ Images must have the following format:
 `assets/buttons`: 50x50 pixels, PNG format.  
 Looking for a particular boss icon? Check out [GBFAL](https://mizagbf.github.io/GBFAL/), then make sure to resize the image.  
 Other sizes will work but might not look nice.  
+  
+### Further Modding  
+If you want to add a visual theme, you have to modify the following:
+- Add your theme to `assets\themes\main.tcl` to redirect it to your TCL file.  
+- Edit `tracker.pyw` (line 25 on the current version) and add your theme to the rotation.  
+  
+If you need to edit `save.json`, the file is structured this way (for version 1.29 at the time of this writing):
+- An object containing:
+    - "version" key and the version string of the tracker by which this file was generated.  
+    - "last" key and the name of the last Raid modified.  
+    - "settings" key and an object, containing the states of various settings of the tracker.  
+    - "history" key and an object containing:  
+        - A raid name as a key and an object structured as:  
+            - A name of a rare item (either bar or sand are supported currently) and a list of integer. One of those integer represents at which total or chest count the item was dropped on. The list size must match the number of this item dropped. The tracker automatically set it to the appropriate size and fill with Zero (which means "Unknown") if needed.  
+    - "favorites" key and a list of twelve elements (one for each function key on a keyboard, up to F12 included). Elements are either the name of a raid associated to the function key, or `null` if not associated.  
+    - Each raid names as keys with an object as a value, containing the following:  
+        - An item name and its associated integer. If the item name is an empty string, it matches the raid button instead. The integer is the number of times that the item dropped or raid beaten.  
