@@ -17,21 +17,21 @@
 * You only need [Python 3](https://www.python.org/downloads/) (version 3.10 or higher) installed.  
 * New to Github? Click the Green `Code` button at the top of this page, then "Download ZIP" to download this repository.  
   
-### Update  
-Simply use the built-in Updater under the `Settings` tab.  
-If it doesn't work or if you want to manually update:  
-* Backup your `save.json` and any other files you might have modified (such as `assets/raids.json`).  
-* Download and overwrite your current GBFLT copy with the new one.  
-* Put your backed up `save.json` (and other files) back in place (overwrite, if asked).  
-  
 ### Usage  
-* Simply double-click on `tracker.pyw`, assuming Python is installed correctly.  
+* Simply double-click on `tracker.pyw`, assuming Python is installed correctly. If nothing happens, see the `Issues?` section below.  
 * Left Click on a button to increase the counter.  
 * Right Click on a button to decrease the counter.  
 * The reset button will reset the current tab.  
 * The raid buttons modify the total raid done. It's also modified if another item is modified.  
 * The chest buttons (if present) modify the total chest obtained. It's also modified if another item is modified.  
 * The values are saved every minute or on exit, if they have been modified.  
+  
+### Update  
+Simply use the built-in Updater under the `Settings` tab.  
+If it doesn't work or if you want to manually update:  
+* Backup your `save.json` and any other files you might have modified (such as `assets/raids.json`).  
+* Download and overwrite your current GBFLT copy with the new one.  
+* Put your backed up `save.json` (and other files) back in place (overwrite, if asked).  
   
 ### Keyboard Shortcuts  
 * `T`: Toggle the `Always on top` settings.  
