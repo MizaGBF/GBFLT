@@ -5,6 +5,7 @@
 ### Features  
 * Lightweight.  
 * No third-party dependencies required.  
+* No Executable. You can even open and modify the application in a notepad.  
 * Light and Dark themes based on the [Azure TTK Theme](https://github.com/rdbende/Azure-ttk-theme) and the [Forest TTK Theme](https://github.com/rdbende/Forest-ttk-theme).  
 * Customizable layout.  
 * Keyboard shortcuts.  
@@ -37,6 +38,7 @@ If it doesn't work or if you want to manually update:
 * `T`: Toggle the `Always on top` settings.  
 * `S`: Toggle the Statistics window.  
 * `L`: Toggle the Light and Dark themes.  
+* `N`: Toggle the Notification Bar.  
 * `E`: Open the Layout Editor.  
 * `R`: Restart the application.  
 * `U`: Check for updates.  

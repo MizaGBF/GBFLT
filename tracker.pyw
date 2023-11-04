@@ -1,10 +1,8 @@
 import tkinter as Tk
 import tkinter.font as tkFont
-from tkinter import ttk
-from tkinter import PhotoImage
+from tkinter import ttk, PhotoImage, messagebox, filedialog
 import time
 import json
-from tkinter import messagebox
 import urllib.request
 import webbrowser
 from contextlib import contextmanager
@@ -30,6 +28,7 @@ class Interface(Tk.Tk):
         self.apprunning = True
         self.version = "0.0"
         self.stats_window = None # reference to the current stat window
+        self.import_window = None # reference to the current import window
         errors = self.load_manifest()
         savedata, rerrors = self.load_savedata()
         errors += rerrors
@@ -136,6 +135,7 @@ class Interface(Tk.Tk):
         self.make_button(tab, "Check Updates   ", lambda : self.check_new_update(False), 2, 3, 3, "we", ("others", "update", (20, 20)))
         self.make_button(tab, "Shortcut List       ", self.show_shortcut, 3, 3, 3, "we", ("others", "shortcut", (20, 20)))
         self.make_button(tab, "Favorited           ", self.show_favorite, 4, 3, 3, "we", ("others", "favorite", (20, 20)))
+        self.make_button(tab, "Import from        ", self.import_data, 5, 3, 3, "we", ("others", "import", (20, 20)))
         # check boxes
         self.show_notif = Tk.IntVar()
         ttk.Checkbutton(tab, text='Show notifications', variable=self.show_notif, command=self.toggle_notif).grid(row=0, column=6, columnspan=5, sticky="we")
@@ -153,6 +153,7 @@ class Interface(Tk.Tk):
         for k in ['<t>', '<T>']:  self.bind(k, self.key_toggle_topmost)
         for k in ['<s>', '<S>']: self.bind(k, self.key_toggle_stat)
         for k in ['<l>', '<L>']: self.bind(k, self.key_toggle_theme)
+        for k in ['<n>', '<N>']: self.bind(k, self.key_toggle_notif)
         for k in ['<e>', '<E>']: self.bind(k, self.key_open_editor)
         for k in ['<r>', '<R>']: self.bind(k, self.key_restart)
         for k in ['<u>', '<U>']: self.bind(k, self.key_update)
@@ -215,6 +216,10 @@ class Interface(Tk.Tk):
 
     def key_toggle_theme(self, ev : Tk.Event): # shortcut to toggle theme
         self.toggle_theme()
+
+    def key_toggle_notif(self, ev : Tk.Event): # shortcut to toggle the notification bar
+        self.show_notif.set(not self.show_notif.get())
+        self.toggle_notif()
 
     def key_open_editor(self, ev : Tk.Event): # shortcut to open the layout editor
         self.open_layout_editor()
@@ -307,10 +312,12 @@ class Interface(Tk.Tk):
         if self.settings["top_most"] == 1:
             self.attributes('-topmost', True)
             if self.stats_window is not None: self.stats_window.attributes('-topmost', True)
+            if self.import_window is not None: self.import_window.attributes('-topmost', True)
             self.push_notif("Windows will always be on top")
         else:
             self.attributes('-topmost', False)
             if self.stats_window is not None: self.stats_window.attributes('-topmost', False)
+            if self.import_window is not None: self.import_window.attributes('-topmost', False)
             self.push_notif("Windows won't be on top")
 
     def toggle_notif(self): # toggle for notifications
@@ -413,10 +420,13 @@ class Interface(Tk.Tk):
                 v = chest_count if rname in self.got_chest else total
                 r = (self.got_chest[rname] + " chests" if rname in self.got_chest else "battles").capitalize()
                 if self.raid_data[rname][k][0] > 0:
-                    h = self.history[rname][k][self.raid_data[rname][k][0]-1]
-                    if h > 0 and h <= v:
-                        self.raid_data[rname][""][2].config(text="{} {} since the last {}".format(v-h, r, k.capitalize()))
-                    else:
+                    try:
+                        h = self.history[rname][k][self.raid_data[rname][k][0]-1]
+                        if h > 0 and h <= v:
+                            self.raid_data[rname][""][2].config(text="{} {} since the last {}".format(v-h, r, k.capitalize()))
+                        else:
+                            self.raid_data[rname][""][2].config(text="")
+                    except:
                         self.raid_data[rname][""][2].config(text="")
                 else:
                     self.raid_data[rname][""][2].config(text="")
@@ -646,10 +656,8 @@ class Interface(Tk.Tk):
             messagebox.showerror("Error", "An error occured while attempting to restart the application:\n"+str(e))
 
     def stats(self): # open the stats window
-        if self.stats_window is not None:
-            self.stats_window.lift()
-        else:
-            self.stats_window = StatScreen(self)
+        if self.stats_window is not None: self.stats_window.lift()
+        else: self.stats_window = StatScreen(self)
 
     def github(self): # open the github repo
         webbrowser.open("https://github.com/MizaGBF/GBFLT", new=2, autoraise=True)
@@ -660,9 +668,9 @@ class Interface(Tk.Tk):
         self.push_notif("Link opened in your broswer")
 
     def show_shortcut(self):
-        messagebox.showinfo("Keyboard Shortcuts", "- T: Toggle the Always on top settings.\n- S: Toggle the Statistics window.\n- L: Toggle the Light and Dark themes.\n- E: Open the Layout Editor.\n- R: Restart the application.\n- U: Check for updates.\n- Page Up or Up: Go to the top tab on the left.\n- Page Down or Down: Go to the top tab on the right.\n- Left: Go to the raid on the left.\n- Right: Go to the raid on the right.\n- Shit+F1~F12: Set the current raid to the Function Key pressed.\n- F1~F12: Go to the raid associated to this Function key.")
+        messagebox.showinfo("Keyboard Shortcuts", "- T: Toggle the Always on top settings.\n- S: Toggle the Statistics window.\n- L: Toggle the Light and Dark themes.\n- N: Toggle the Notification Bar.\n- E: Open the Layout Editor.\n- R: Restart the application.\n- U: Check for updates.\n- Page Up or Up: Go to the top tab on the left.\n- Page Down or Down: Go to the top tab on the right.\n- Left: Go to the raid on the left.\n- Right: Go to the raid on the right.\n- Shit+F1~F12: Set the current raid to the Function Key pressed.\n- F1~F12: Go to the raid associated to this Function key.")
 
-    def show_favorite(self):
+    def show_favorite(self): # favorite list
         msg = ""
         for i in range(12):
             if len(self.favorites) < i+1: self.favorites.append(None)
@@ -670,8 +678,9 @@ class Interface(Tk.Tk):
         msg += "\nUse Shift+F1~F12 on a raid tab to set.\nAnd then the F1~F12 key itself to go quickly to that raid."
         messagebox.showinfo("Favorited Raids", msg)
 
-    def show_changelog(self):
+    def show_changelog(self): # display the changelog
         changelog = [
+            "1.30 - Added the Data Importer and the 'N' shortcut.",
             "1.29 - Added the Forest TTK Themes. Bug fix: Impossible to change the theme on a fresh save file.",
             "1.28 - Added \"Credits\" and \"What's New?\" buttons.",
             "1.27 - Made the app temporarly python 3.9-friendly. Added a python version check during automatic updates, to avoid accidental bricking.",
@@ -680,8 +689,7 @@ class Interface(Tk.Tk):
             "1.24 - Added the function keys binding to favorite raids, and the optional Notification bar.",
             "1.23 - Added keyboard shortcuts.",
             "1.22 - Added the \"Always on top\" setting.",
-            "1.21 - Added the \"Export to Text\" button.",
-            "1.20 - Added an automatic updater.",
+            "1.21 - Added the \"Export to Text\" button."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
@@ -717,6 +725,74 @@ class Interface(Tk.Tk):
         with open("drop_export_{}.txt".format(today.strftime("%m-%d-%Y_%H-%M-%S.%f")), mode="w", encoding="utf-8") as f:
             f.write(report)
         messagebox.showinfo("Info", "Data exported to: drop_export_{}.txt".format(today.strftime("%m-%d-%Y_%H-%M-%S.%f")))
+
+    def import_data(self): # import data from other trackers
+        if self.import_window is not None: self.import_window.lift()
+        else: self.import_window = ImportDial(self)
+
+class ImportDial(Tk.Toplevel):
+    def __init__(self, parent : Tk.Tk):
+        # window
+        self.parent = parent
+        Tk.Toplevel.__init__(self,parent)
+        self.title("GBF Loot Tracker - Data Import")
+        self.resizable(width=False, height=False) # not resizable
+        self.iconbitmap('assets/icon.ico')
+        if self.parent.settings.get("top_most", 0) == 1:
+            self.attributes('-topmost', True)
+        
+        Tk.Label(self, text="You can import some raid data from other similar trackers.").grid(row=0, column=0, columnspan=10, sticky="w")
+        Tk.Button(self, text="'Gold-Bar-Tracker'", command=lambda : self.import_data(0)).grid(row=1, column=0, columnspan=10, sticky="we")
+        
+        Tk.Label(self, text="Your tracker missing? Please notify us.").grid(row=10, column=0, columnspan=10, sticky="w")
+
+    def import_data(self, sid : int): # importer
+        if sid == 0: # DYDK GBTracker
+            messagebox.showinfo("Info", "Please select 'data.json' to import the data.\nIts content will be added to your existing data.\nCancel or Backup your 'save.json' if you're uncertain.")
+            path = filedialog.askopenfilename()
+            if path != "":
+                try:
+                    with open(path, mode="r", encoding="utf-8") as f:
+                        data = json.load(f)
+                    matching_table = {
+                        "pbhl": "BHL",
+                        "akasha": "Akasha",
+                        "gohl": "Grande",
+                        "dragon": "6D",
+                        "subhl": "SuBaha",
+                        "coronaring": "blue",
+                        "lineagering": "blue",
+                        "intricacyring": "ring3",
+                        "goldbar": "bar",
+                        "hollowkey": "blue",
+                        "azurite": "blue",
+                        "trash": "blue",
+                        "earring": "fireearring",
+                        "sand": "sand",
+                        "raid": ""
+                    }
+                    modified = False
+                    for k, v in data.items():
+                        if "raid" in v and matching_table.get(k, "_undefined_match_") in self.parent.raid_data:
+                            if v["raid"] != 0:
+                                for x, y in v.items():
+                                    i = matching_table.get(x, None)
+                                    if i is None: continue
+                                    if i == "blue" and "blue" not in self.parent.raid_data[matching_table[k]]: i = ""
+                                    self.parent.raid_data[matching_table[k]][i][0] += y
+                                    modified = True
+                                self.parent.update_label(matching_table[k])
+                    if modified:
+                        messagebox.showinfo("Info", "Data has been imported with success, when possible.\nNote: Gold Bar and Sand tracking might be incorrect until the next restart.")
+                    else:
+                        messagebox.showinfo("Info", "No Data has been imported: No relevant data has been found.")
+                except Exception as e:
+                    print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
+                    messagebox.showinfo("Error", "An error occured.\nThe process might have been inturrepted mid-wayt by this error:\n" + str(e) + "\n\nDid you select the right file? If so, the format might have changed, please notify us the issue.")
+        self.close()
+
+    def close(self): # called on close
+        self.destroy()
 
 class StatScreen(Tk.Toplevel): # stats window
     WIDTH=4
