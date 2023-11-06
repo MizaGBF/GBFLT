@@ -42,6 +42,7 @@ class Tracker(Tk.Tk):
         self.title("GBF Loot Tracker v" + self.version)
         self.iconbitmap('assets/icon.ico')
         self.resizable(width=False, height=False) # not resizable
+        self.minsize(240, 150)
         self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
         self.assets = {} # contains loaded images
         self.raid_data = {} # contains the layout
@@ -773,6 +774,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self): # display the changelog
         changelog = [
+            "1.34 - Main and Detached Windows now have a minimum size of 240x150 pixels.",
             "1.33 - Added Multi-Window support.",
             "1.32 - The Layout Editor is now part of the Tracker itself.",
             "1.31 - Added more Python version checks, at startup and when opening the Layout Editor.",
@@ -781,8 +783,7 @@ class Tracker(Tk.Tk):
             "1.28 - Added \"Credits\" and \"What's New?\" buttons.",
             "1.27 - Made the app temporarly python 3.9-friendly. Added a python version check during automatic updates, to avoid accidental bricking.",
             "1.26 - Added the \"Favorited\" button.",
-            "1.25 - Added the \"Shortcut List\" button. Fixed the \"Reset\" buttons position to the corner.",
-            "1.24 - Added the function keys binding to favorite raids, and the optional Notification bar.",
+            "1.25 - Added the \"Shortcut List\" button. Fixed the \"Reset\" buttons position to the corner."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
@@ -894,6 +895,7 @@ class DetachedRaid(Tk.Toplevel): # detached raid window
         Tk.Toplevel.__init__(self,parent)
         self.title(rname)
         self.resizable(width=False, height=False) # not resizable
+        self.minsize(240, 150)
         self.iconbitmap('assets/icon.ico')
         self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
         if self.parent.settings.get("top_most", 0) == 1:
