@@ -27,6 +27,7 @@ class Interface(Tk.Tk):
         self.parent = None
         self.apprunning = True
         self.version = "0.0"
+        self.python = "3.10"
         self.stats_window = None # reference to the current stat window
         self.import_window = None # reference to the current import window
         errors = self.load_manifest()
@@ -167,6 +168,8 @@ class Interface(Tk.Tk):
         if self.settings.get("show_notif", 0) == 1: self.notification.grid(row=1, column=0, sticky="w")
         
         # end
+        if self.check_python(self.python) is False:
+            errors.append("Your Python version is outdated ({}.{}). Consider uninstalling it for a recent version.".format(sys.version_info.major, sys.version_info.minor))
         self.top_tab.grid(row=0, column=0, columnspan=10, sticky="wnes")
         if savedata is not None: self.apply_savedata(savedata)
         if self.last_tab in self.tab_tree:
@@ -205,6 +208,16 @@ class Interface(Tk.Tk):
                     return self.assets['__dummy_photo_image__'+str(size)]
                 except Exception as e:
                     print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
+
+    def check_python(self, string): # check the python version against a version string. Return True if valid, False if outdated, None if error
+        try:
+            pver = string.split('.')
+            if sys.version_info.major != int(pver[0]) or sys.version_info.minor < int(pver[1]):
+                return False
+            else:
+                return True
+        except:
+            return None
 
     def key_toggle_topmost(self, ev : Tk.Event): # shortcut to toggle top most option
         self.top_most.set(not self.top_most.get())
@@ -462,8 +475,7 @@ class Interface(Tk.Tk):
                 data = json.loads(url.read().decode("utf-8"))
             if "version" in data and self.version != "0.0" and not self.cmpVer(self.version, data["version"]):
                 if Tk.messagebox.askquestion(title="Update", message="An update is available.\nCurrent version: {}\nNew Version: {}\nDo you want to download and install?\n- 'save.json' and 'assets/raids.json' will be kept intact.\n- Other files will be overwritten.".format(self.version, data["version"])) == "yes":
-                    pver = data.get("python", "3.10").split(".")
-                    if sys.version_info.major != int(pver[0]) or sys.version_info.minor < int(pver[1]):
+                    if self.check_python(data.get("python", "3.10")) is False:
                         if messagebox.askquestion("Outdated Python", "Your python version is v{}.{}.\nAt least Python v{} is recommended.\nUninstall python and install a more recent version.\nOpen the download page?".format(sys.version_info.major, sys.version_info.minor, data.get("python", "3.10"))) == "yes":
                             webbrowser.open("https://www.python.org/downloads/", new=2, autoraise=True)
                     else:
@@ -558,11 +570,13 @@ class Interface(Tk.Tk):
     def load_manifest(self): # load data from manifest.json (only the version number for now)
         try:
             with open("assets/manifest.json", mode="r", encoding="utf-8") as f:
-                self.version = json.load(f)["version"]
+                data = json.load(f)
+                self.version = data["version"]
+                self.python = data["python"]
             return []
         except Exception as e:
             print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
-            return ["Couldn't open 'assets/manifest.json'"]
+            return ["Couldn't read 'assets/manifest.json'"]
 
     def load_savedata(self): # load save.data, return a tuple of the savedata (None if error) and an error list
         errors = []
@@ -642,8 +656,11 @@ class Interface(Tk.Tk):
 
     def open_layout_editor(self): # open assets/layout_editor.pyw
         try:
-            subprocess.Popen([sys.executable, "layout_editor.pyw"], cwd="assets")
-            self.push_notif("Layout Editor has been opened")
+            if self.check_python(self.python) is False:
+                messagebox.showerror("Error", "Your python version is unsufficient to open the layout editor.\nConsider uninstalling it for a recent version.")
+            else:
+                subprocess.Popen([sys.executable, "layout_editor.pyw"], cwd="assets")
+                self.push_notif("Layout Editor has been opened")
         except Exception as e:
             messagebox.showerror("Error", "An error occured while opening the Layout Editor:\n"+str(e))
 
@@ -680,6 +697,7 @@ class Interface(Tk.Tk):
 
     def show_changelog(self): # display the changelog
         changelog = [
+            "1.31 - Added more Python version checks, at startup and when opening the Layout Editor.",
             "1.30 - Added the Data Importer and the 'N' shortcut.",
             "1.29 - Added the Forest TTK Themes. Bug fix: Impossible to change the theme on a fresh save file.",
             "1.28 - Added \"Credits\" and \"What's New?\" buttons.",
@@ -688,8 +706,7 @@ class Interface(Tk.Tk):
             "1.25 - Added the \"Shortcut List\" button. Fixed the \"Reset\" buttons position to the corner.",
             "1.24 - Added the function keys binding to favorite raids, and the optional Notification bar.",
             "1.23 - Added keyboard shortcuts.",
-            "1.22 - Added the \"Always on top\" setting.",
-            "1.21 - Added the \"Export to Text\" button."
+            "1.22 - Added the \"Always on top\" setting."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
