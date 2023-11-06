@@ -73,45 +73,7 @@ class Tracker(Tk.Tk):
                         sub = ttk.Frame(raid_tabs)
                         raid_tabs.add(sub, text=rn)
                         raid_tabs.tab(sub, image=self.load_asset("assets/tabs/" + r.get("raid_image", "").replace(".png", "") + ".png", (20, 20)), compound=Tk.LEFT)
-                        button = self.make_button(sub, "", None, 0, 0, 1, "w", ("buttons", r.get("raid_image", ""), (50, 50)))
-                        button.bind('<Button-1>', lambda ev, btn=button, rn=rn: self.count(btn, rn, "", add=True))
-                        button.bind('<Button-3>', lambda ev, btn=button, rn=rn: self.count(btn, rn, "", add=False))
-                        label = Tk.Label(sub, text="0") # Total label
-                        label.grid(row=1, column=0)
-                        hist = Tk.Label(sub, text="") # History label
-                        hist.grid(row=4, column=1, columnspan=10)
-                        self.raid_data[rn][""] = [0, label, hist] # the "" key is used for the total
-                        # check for chest in the list
-                        chest = None
-                        for l in r.get("loot", []):
-                            if l.replace(".png", "") in self.CHESTS:
-                                chest = l
-                                self.got_chest[rn] = chest
-                                break
-                        # texts
-                        Tk.Label(sub, text="Total").grid(row=2, column=0)
-                        Tk.Label(sub, text="Chest" if chest is not None else "").grid(row=3, column=0)
-                        # build button and label list
-                        for i, l in enumerate(r.get("loot", [])):
-                            if l.endswith(".png"): l = l[:-3] # strip extension to avoid possible weird behaviors
-                            if l in self.raid_data[rn] or l == "" or (l in self.CHESTS and l != chest):
-                                continue
-                            if l in self.RARES:
-                                if rn not in self.got_rare: self.got_rare[rn] = []
-                                self.got_rare[rn].append(l)
-                            button = self.make_button(sub, "", None, 0, i+1, 1, "w", ("buttons", l, (50, 50)))
-                            button.bind('<Button-1>', lambda ev, btn=button, rn=rn, l=l: self.count(btn, rn, l, add=True))
-                            button.bind('<Button-3>', lambda ev, btn=button, rn=rn, l=l: self.count(btn, rn, l, add=False))
-                            d = [0, None, None] # other buttons got two labels (count and percent)
-                            d[1] = Tk.Label(sub, text="0")
-                            d[1].grid(row=1, column=i+1)
-                            d[2] = Tk.Label(sub, text="0%")
-                            d[2].grid(row=2, column=i+1)
-                            if chest is not None and l != chest:
-                                d.append(Tk.Label(sub, text="0%"))
-                                d[3].grid(row=3, column=i+1)
-                            self.raid_data[rn][l] = d
-                    self.make_button(sub, "Reset", lambda rn=rn: self.reset(rn), 4, 0, 1, "w", ("others", "reset", (20, 20)))
+                        self.set_tab_content(sub, r, self.raid_data[rn], True)
             raid_tabs.pack(expand=1, fill="both")
         # settings
         tab = ttk.Frame(self.top_tab)
@@ -169,6 +131,8 @@ class Tracker(Tk.Tk):
             t = self.tab_tree[self.last_tab]
             self.top_tab.select(t[0]) # select top tab
             t[2].select(t[1]) # select sub tab on stored notebook
+        for rn, v in self.settings.get("detached", {}).items():
+            self.detach(rn, v)
         if len(errors) > 0:
             if len(errors) > 6:
                 errors = errors[:6] + ["And {} more errors...".format(len(errors)-6)]
@@ -177,7 +141,55 @@ class Tracker(Tk.Tk):
             self.check_new_update()
         self.last_savedata_string = str(self.get_save_data()) # get current state of the save as a string
 
-    def make_button(self, parent, text : str, command : Optional[Callable], row : int, column : int, columnspan : int, sticky : str, asset_tuple : Optional[tuple] = None): # function to make our buttons. Asset tuple is composed of 3 elements: folder, asset name and a size tuple (in pixels)
+    def set_tab_content(self, parent : Tk.Tk, layout : dict, container : dict, is_main_window : bool):
+        rn = layout["text"]
+        frame = ttk.Frame(parent)
+        frame.grid(row=0, column=0)
+        button = self.make_button(frame, "", None, 0, 0, 1, "w", ("buttons", layout.get("raid_image", ""), (50, 50)))
+        button.bind('<Button-1>', lambda ev, btn=button, rn=rn: self.count(btn, rn, "", add=True))
+        button.bind('<Button-3>', lambda ev, btn=button, rn=rn: self.count(btn, rn, "", add=False))
+        label = Tk.Label(frame, text="0") # Total label
+        label.grid(row=1, column=0)
+        hist = Tk.Label(frame, text="") # History label
+        hist.grid(row=4, column=2 if is_main_window else 1, columnspan=10)
+        container[""] = [0, label, hist, frame, layout, None] # the "" key is used for the total. this value contains: total counter, its label, the history label, the tab frame, the container frame, the detach button and the window if open
+        # check for chest in the list
+        if is_main_window:
+            chest = None
+            for l in layout.get("loot", []):
+                if l.replace(".png", "") in self.CHESTS:
+                    chest = l
+                    self.got_chest[rn] = chest
+                    break
+        else:
+            chest = self.got_chest.get(rn, None)
+        # texts
+        Tk.Label(frame, text="Total").grid(row=2, column=0)
+        Tk.Label(frame, text="Chest" if chest is not None else "").grid(row=3, column=0)
+        # build button and label list
+        for i, l in enumerate(layout.get("loot", [])):
+            if l.endswith(".png"): l = l[:-3] # strip extension to avoid possible weird behaviors
+            if l in container or l == "" or (l in self.CHESTS and l != chest):
+                continue
+            if is_main_window and l in self.RARES:
+                if rn not in self.got_rare: self.got_rare[rn] = []
+                self.got_rare[rn].append(l)
+            button = self.make_button(frame, "", None, 0, i+1, 1, "w", ("buttons", l, (50, 50)))
+            button.bind('<Button-1>', lambda ev, btn=button, rn=rn, l=l: self.count(btn, rn, l, add=True))
+            button.bind('<Button-3>', lambda ev, btn=button, rn=rn, l=l: self.count(btn, rn, l, add=False))
+            d = [0, None, None] # other buttons got two labels (count and percent)
+            d[1] = Tk.Label(frame, text="0")
+            d[1].grid(row=1, column=i+1)
+            d[2] = Tk.Label(frame, text="0%")
+            d[2].grid(row=2, column=i+1)
+            if chest is not None and l != chest:
+                d.append(Tk.Label(frame, text="0%"))
+                d[3].grid(row=3, column=i+1)
+            container[l] = d
+        self.make_button(frame, "0", lambda rn=rn: self.reset(rn), 4, 0, 1, "we", ("others", "reset", (20, 20)))
+        if is_main_window: self.make_button(frame, "D", lambda rn=rn: self.detach(rn), 4, 1, 1, "we", ("others", "detach", (20, 20)))
+
+    def make_button(self, parent : Tk.Tk, text : str, command : Optional[Callable], row : int, column : int, columnspan : int, sticky : str, asset_tuple : Optional[tuple] = None): # function to make our buttons. Asset tuple is composed of 3 elements: folder, asset name and a size tuple (in pixels)
         if asset_tuple is not None:
             asset = self.load_asset("assets/" + asset_tuple[0] + "/" + asset_tuple[1].replace(".png", "") + ".png", asset_tuple[2])
         else:
@@ -335,10 +347,20 @@ class Tracker(Tk.Tk):
 
     def close(self): # called when we close the window
         self.apprunning = False
+        if "detached" not in self.settings: self.settings['detached'] = {}
+        for rname in self.raid_data: # check opened windows and save their positions
+            if self.raid_data[rname][""][5] is not None:
+                self.settings["detached"][rname] = [self.raid_data[rname][""][5].winfo_rootx(), self.raid_data[rname][""][5].winfo_rooty()] # save their positions
+                self.modified = True
+            elif rname in self.settings['detached']:
+                del self.settings['detached'][rname]
         self.save() # last save attempt
         if self.stats_window is not None: self.stats_window.close()
         if self.import_window is not None: self.import_window.close()
         if self.editor_window is not None: self.editor_window.close()
+        for rname in self.raid_data:
+            if self.raid_data[rname][""][5] is not None:
+                self.raid_data[rname][""][5].close()
         self.destroy()
 
     def load_raids(self): # load raids.json
@@ -363,12 +385,18 @@ class Tracker(Tk.Tk):
             if self.stats_window is not None: self.stats_window.attributes('-topmost', True)
             if self.import_window is not None: self.import_window.attributes('-topmost', True)
             if self.editor_window is not None: self.editor_window.attributes('-topmost', True)
+            for rname in self.raid_data:
+                if self.raid_data[rname][""][5] is not None:
+                    self.raid_data[rname][""][5].attributes('-topmost', True)
             self.push_notif("Windows will always be on top")
         else:
             self.attributes('-topmost', False)
             if self.stats_window is not None: self.stats_window.attributes('-topmost', False)
             if self.import_window is not None: self.import_window.attributes('-topmost', False)
             if self.editor_window is not None: self.editor_window.attributes('-topmost', False)
+            for rname in self.raid_data:
+                if self.raid_data[rname][""][5] is not None:
+                    self.raid_data[rname][""][5].attributes('-topmost', False)
             self.push_notif("Windows won't be on top")
 
     def toggle_notif(self): # toggle for notifications
@@ -443,6 +471,9 @@ class Tracker(Tk.Tk):
                     self.raid_data[rname][""][0] = max(0, self.raid_data[rname][""][0] - 1)
                 # done
                 self.modified = True
+                if self.raid_data[rname][""][5] is not None: # update detached window if it exists
+                    for k in self.raid_data[rname]:
+                        self.raid_data[rname][""][5].data[k][0] = self.raid_data[rname][k][0]
                 self.update_label(rname) # update the labels for this raid
                 if self.stats_window is not None: self.stats_window.update_data() # update stats window if open
 
@@ -458,46 +489,59 @@ class Tracker(Tk.Tk):
                 self.update_label(rname)
                 self.push_notif("Raid '{}' has been reset".format(rname))
 
+    def detach(self, rname : str, position : Optional[list] = None): # raid name
+        if rname in self.raid_data:
+            if self.raid_data[rname][""][5] is not None:
+                self.raid_data[rname][""][5].lift()
+            else:
+                self.raid_data[rname][""][5] = DetachedRaid(self, rname, position)
+
     def update_label(self, rname : str): # raid name
         if rname in self.raid_data:
-            total = self.raid_data[rname][""][0]
-            chest_count = 0
-            if rname in self.got_chest: # get total of chest
-                chest_count = self.raid_data[rname][self.got_chest[rname]][0]
-            self.raid_data[rname][""][1].config(text=str(total))
-            # update "since the last" label
-            if rname in self.got_rare:
-                k = self.got_rare[rname][0]
-                v = chest_count if rname in self.got_chest else total
-                r = (self.got_chest[rname] + " chests" if rname in self.got_chest else "battles").capitalize()
-                if self.raid_data[rname][k][0] > 0:
-                    try:
-                        h = self.history[rname][k][self.raid_data[rname][k][0]-1]
-                        if h > 0 and h <= v:
-                            self.raid_data[rname][""][2].config(text="{} {} since the last {}".format(v-h, r, k.capitalize()))
-                        else:
-                            self.raid_data[rname][""][2].config(text="")
-                    except:
-                        self.raid_data[rname][""][2].config(text="")
-                else:
-                    self.raid_data[rname][""][2].config(text="")
-            else:
-                self.raid_data[rname][""][2].config(text="")
-            # update each button values and percentage
-            for k, v in self.raid_data[rname].items():
-                if k == "": continue
-                i = v[0]
-                v[1].config(text =str(i))
-                if total > 0:
-                    v[2].config(text="{:.2f}%".format(min(100, 100*float(i)/total)).replace('.00', ''))
-                else:
-                    v[2].config(text="0%")
-                # chest percentage
-                if rname in self.got_chest and len(v) == 4:
-                    if chest_count > 0:
-                        v[3].config(text="{:.2f}%".format(min(100, 100*float(v[0])/chest_count)).replace('.00', ''))
+            self.update_label_sub(rname, self.raid_data[rname])
+            if self.raid_data[rname][""][5] is not None:
+                self.update_label_sub(rname, self.raid_data[rname][""][5].data)
+
+    def update_label_sub(self, rname : str, data : dict):
+        total = data[""][0]
+        chest_count = 0
+        if rname in self.got_chest: # get total of chest
+            chest_count = data[self.got_chest[rname]][0]
+        data[""][1].config(text=str(total))
+        # update "since the last" label
+        if rname in self.got_rare:
+            k = self.got_rare[rname][0]
+            v = chest_count if rname in self.got_chest else total
+            r = (self.got_chest[rname] + " chests" if rname in self.got_chest else "battles").capitalize()
+            if data[k][0] > 0:
+                try:
+                    h = self.history[rname][k][data[k][0]-1]
+                    if h > 0 and h <= v:
+                        data[""][2].config(text="{} {} since the last {}".format(v-h, r, k.capitalize()))
                     else:
-                        v[3].config(text="0%")
+                        data[""][2].config(text="")
+                except:
+                    data[""][2].config(text="")
+            else:
+                data[""][2].config(text="")
+        else:
+            data[""][2].config(text="")
+        # update each button values and percentage
+        for k, v in data.items():
+            if k == "": continue
+            i = v[0]
+            v[1].config(text =str(i))
+            if total > 0:
+                v[2].config(text="{:.2f}%".format(min(100, 100*float(i)/total)).replace('.00', ''))
+            else:
+                v[2].config(text="0%")
+            # chest percentage
+            if rname in self.got_chest and len(v) == 4:
+                if chest_count > 0:
+                    v[3].config(text="{:.2f}%".format(min(100, 100*float(v[0])/chest_count)).replace('.00', ''))
+                else:
+                    v[3].config(text="0%")
+        
 
     def cmpVer(self, mver : str, tver : str): # compare version strings, True if mver greater or equal, else False
         me = mver.split('.')
@@ -729,6 +773,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self): # display the changelog
         changelog = [
+            "1.33 - Added Multi-Window support.",
             "1.32 - The Layout Editor is now part of the Tracker itself.",
             "1.31 - Added more Python version checks, at startup and when opening the Layout Editor.",
             "1.30 - Added the Data Importer and the 'Notification Bar' keyboard shortcut.",
@@ -738,7 +783,6 @@ class Tracker(Tk.Tk):
             "1.26 - Added the \"Favorited\" button.",
             "1.25 - Added the \"Shortcut List\" button. Fixed the \"Reset\" buttons position to the corner.",
             "1.24 - Added the function keys binding to favorite raids, and the optional Notification bar.",
-            "1.23 - Added keyboard shortcuts."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
@@ -841,6 +885,31 @@ class ImportDial(Tk.Toplevel):
         self.close()
 
     def close(self): # called on close
+        self.destroy()
+
+class DetachedRaid(Tk.Toplevel): # detached raid window
+    def __init__(self, parent : Tk.Tk, rname : str, position : Optional[list] = None):
+        # window
+        self.parent = parent
+        Tk.Toplevel.__init__(self,parent)
+        self.title(rname)
+        self.resizable(width=False, height=False) # not resizable
+        self.iconbitmap('assets/icon.ico')
+        self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
+        if self.parent.settings.get("top_most", 0) == 1:
+            self.attributes('-topmost', True)
+        self.rname = rname
+        self.data = {}
+        self.parent.set_tab_content(self, self.parent.raid_data[self.rname][""][4], self.data, False) # fill window
+        for k in self.parent.raid_data[self.rname]: # mirror values
+            self.data[k][0] = self.parent.raid_data[self.rname][k][0]
+        self.parent.update_label_sub(self.rname, self.data) # update the window
+        if position is not None: # set position if given
+            self.geometry('+{}+{}'.format(position[0], position[1]))
+        self.parent.modified = True
+
+    def close(self):
+        self.parent.raid_data[self.rname][""][5] = None
         self.destroy()
 
 class StatScreen(Tk.Toplevel): # stats window

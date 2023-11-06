@@ -9,6 +9,7 @@
 * Light and Dark themes based on the [Azure TTK Theme](https://github.com/rdbende/Azure-ttk-theme) and the [Forest TTK Theme](https://github.com/rdbende/Forest-ttk-theme).  
 * Customizable layout.  
 * Keyboard shortcuts.  
+* Multi-Window support.  
 * Global statistics.  
 * Auto updater.  
 * and more...  
@@ -66,7 +67,7 @@ There are two ways to edit the `assets/raids.json` files:
   
 - **The Easier Way:**  
   
-Under the `settings` tab of the tracker, press the button `Layout Editor` to open an interface allowing you to edit `assets/raids.json`. Alternatively, press the `E` key on your keyboard..  
+Under the `settings` tab of the tracker, press the button `Layout Editor` to open an interface allowing you to edit `assets/raids.json`. Alternatively, press the `E` key on your keyboard.  
 ![Editor Preview](https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/preview3.png)  
 - On the top area, you can edit a tab `Text` and `Image` values (the image must be a 20x20 pixels PNG file in the `assets/tabs` folder).  
 - Clicking on a tab `Edit`button lets you open its content in the bottom area.  
