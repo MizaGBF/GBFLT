@@ -1,6 +1,6 @@
 import tkinter as Tk
 import tkinter.font as tkFont
-from tkinter import ttk, PhotoImage, messagebox, filedialog
+from tkinter import ttk, PhotoImage, messagebox, filedialog, simpledialog
 import time
 import json
 import urllib.request
@@ -16,7 +16,7 @@ from typing import Callable, Optional
 from datetime import datetime
 import traceback
 
-class Interface(Tk.Tk):
+class Tracker(Tk.Tk):
     CHESTS = ["wood", "silver", "gold", "red", "blue", "purple"] # chest list
     RARES = ["bar", "sand"] # rare item
     FORBIDDEN = ["version", "last", "settings", "history", "favorites"] # forbidden raid name list
@@ -30,6 +30,7 @@ class Interface(Tk.Tk):
         self.python = "3.10"
         self.stats_window = None # reference to the current stat window
         self.import_window = None # reference to the current import window
+        self.editor_window = None # reference to the current editor window
         errors = self.load_manifest()
         savedata, rerrors = self.load_savedata()
         errors += rerrors
@@ -48,25 +49,24 @@ class Interface(Tk.Tk):
         self.got_rare = {} # set of raid with a bar or sand button
         self.last_tab = None # track the last tab used
         self.modified = False # if True, need to save
-        data, rerrors = self.load_raids()
+        layout, rerrors = self.load_raids()
         errors += rerrors
+        errors += self.verify_layout(layout)
         
         self.tab_tree = {} # used to memorize the tab structure, to set the active tab after loading
         self.top_tab = ttk.Notebook(self)
-        for ti, t in enumerate(data): # top tabs
+        for ti, t in enumerate(layout): # top tabs
             tab = ttk.Frame(self.top_tab)
             self.top_tab.add(tab, text=t.get("text", ""))
             self.top_tab.tab(tab, image=self.load_asset("assets/tabs/" + t.get("tab_image", "").replace(".png", "") + ".png", (20, 20)), compound=Tk.LEFT)
             raid_tabs = ttk.Notebook(tab)
             for c, r in enumerate(t.get("raids", [])): # raid tabs
-                if "text" not in r:
-                    errors.append("Raid '{}' doesn't have a 'text' value in Tab '{}'".format(c, ti))
-                elif r["text"] in self.raid_data:
-                    errors.append("Duplicate raid name '{}' in Tab '{}'".format(r["text"], ti))
+                if "text" not in r or  r["text"] in self.raid_data:
+                    continue
                 else:
                     rn = r["text"]
                     if rn in self.FORBIDDEN:
-                        errors.append("Raid name {} is forbidden in Tab '{}'".format(rn, ti))
+                        continue
                     else:
                         self.tab_tree[rn] = (ti, c, raid_tabs)
                         self.raid_data[rn] = {}
@@ -94,14 +94,7 @@ class Interface(Tk.Tk):
                         # build button and label list
                         for i, l in enumerate(r.get("loot", [])):
                             if l.endswith(".png"): l = l[:-3] # strip extension to avoid possible weird behaviors
-                            if l in self.raid_data[rn]:
-                                errors.append("Raid {} '{}' in Tab '{}': '{}' is present twice in the loot list".format(c, rn, ti, l))
-                                continue
-                            elif l == "":
-                                errors.append("Raid {} '{}' in Tab '{}': Skipped an empty string".format(c, rn, ti))
-                                continue
-                            elif l in self.CHESTS and l != chest:
-                                errors.append("Raid {} '{}' in Tab '{}': Only one chest button supported per raid".format(c, rn, ti))
+                            if l in self.raid_data[rn] or l == "" or (l in self.CHESTS and l != chest):
                                 continue
                             if l in self.RARES:
                                 if rn not in self.got_rare: self.got_rare[rn] = []
@@ -219,6 +212,47 @@ class Interface(Tk.Tk):
         except:
             return None
 
+    def verify_layout(self, layout : dict): # verify the layout for errors
+        errors = []
+        raid_data = {}
+        got_chest = {}
+        for ti, t in enumerate(layout):
+            for c, r in enumerate(t.get("raids", [])): # raid tabs
+                if "text" not in r:
+                    errors.append("Raid '{}' doesn't have a 'Text' value in Tab '{}'".format(c, ti+1))
+                    continue
+                elif r["text"] in raid_data:
+                    errors.append("Duplicate raid name '{}' in Tab '{}'".format(r["text"], ti+1))
+                    continue
+                else:
+                    rn = r["text"]
+                    if rn in self.FORBIDDEN:
+                        errors.append("Raid name '{}' is forbidde in Tab '{}'".format(rn, ti+1))
+                        continue
+                    else:
+                        raid_data[rn] = {}
+                        # check for chest in the list
+                        chest = None
+                        for l in r.get("loot", []):
+                            if l.replace(".png", "") in self.CHESTS:
+                                chest = l
+                                got_chest[rn] = chest
+                                break
+                        for i, l in enumerate(r.get("loot", [])):
+                            if l.endswith(".png"): l = l[:-3] # strip extension to avoid possible weird behaviors
+                            if l in raid_data[rn]:
+                                errors.append("Raid {} '{}' in Tab '{}': '{}' is present twice in the loot list".format(c+1, rn, ti+1, l))
+                                continue
+                            elif l == "":
+                                errors.append("Raid {} '{}' in Tab '{}': There is an empty string or an extra slash '/'".format(c+1, rn, ti+1))
+                                continue
+                            elif l in self.CHESTS and l != chest:
+                                errors.append("Raid {} '{}' in Tab '{}': Only one chest button supported per raid".format(c+1, rn, ti+1))
+                                continue
+                            raid_data[rn][l] = None
+        if len(errors) > 8: errors = errors[:8] + ["And more..."] # limit to 8 error messages
+        return errors
+
     def key_toggle_topmost(self, ev : Tk.Event): # shortcut to toggle top most option
         self.top_most.set(not self.top_most.get())
         self.toggle_topmost()
@@ -303,6 +337,8 @@ class Interface(Tk.Tk):
         self.apprunning = False
         self.save() # last save attempt
         if self.stats_window is not None: self.stats_window.close()
+        if self.import_window is not None: self.import_window.close()
+        if self.editor_window is not None: self.editor_window.close()
         self.destroy()
 
     def load_raids(self): # load raids.json
@@ -326,11 +362,13 @@ class Interface(Tk.Tk):
             self.attributes('-topmost', True)
             if self.stats_window is not None: self.stats_window.attributes('-topmost', True)
             if self.import_window is not None: self.import_window.attributes('-topmost', True)
+            if self.editor_window is not None: self.editor_window.attributes('-topmost', True)
             self.push_notif("Windows will always be on top")
         else:
             self.attributes('-topmost', False)
             if self.stats_window is not None: self.stats_window.attributes('-topmost', False)
             if self.import_window is not None: self.import_window.attributes('-topmost', False)
+            if self.editor_window is not None: self.editor_window.attributes('-topmost', False)
             self.push_notif("Windows won't be on top")
 
     def toggle_notif(self): # toggle for notifications
@@ -655,14 +693,8 @@ class Interface(Tk.Tk):
         return savedata
 
     def open_layout_editor(self): # open assets/layout_editor.pyw
-        try:
-            if self.check_python(self.python) is False:
-                messagebox.showerror("Error", "Your python version is unsufficient to open the layout editor.\nConsider uninstalling it for a recent version.")
-            else:
-                subprocess.Popen([sys.executable, "layout_editor.pyw"], cwd="assets")
-                self.push_notif("Layout Editor has been opened")
-        except Exception as e:
-            messagebox.showerror("Error", "An error occured while opening the Layout Editor:\n"+str(e))
+        if self.editor_window is not None: self.editor_window.lift()
+        else: self.editor_window = Editor(self)
 
     def restart(self): # retsart the app (used to check layout changes)
         try:
@@ -697,16 +729,16 @@ class Interface(Tk.Tk):
 
     def show_changelog(self): # display the changelog
         changelog = [
+            "1.32 - The Layout Editor is now part of the Tracker itself.",
             "1.31 - Added more Python version checks, at startup and when opening the Layout Editor.",
-            "1.30 - Added the Data Importer and the 'N' shortcut.",
+            "1.30 - Added the Data Importer and the 'Notification Bar' keyboard shortcut.",
             "1.29 - Added the Forest TTK Themes. Bug fix: Impossible to change the theme on a fresh save file.",
             "1.28 - Added \"Credits\" and \"What's New?\" buttons.",
             "1.27 - Made the app temporarly python 3.9-friendly. Added a python version check during automatic updates, to avoid accidental bricking.",
             "1.26 - Added the \"Favorited\" button.",
             "1.25 - Added the \"Shortcut List\" button. Fixed the \"Reset\" buttons position to the corner.",
             "1.24 - Added the function keys binding to favorite raids, and the optional Notification bar.",
-            "1.23 - Added keyboard shortcuts.",
-            "1.22 - Added the \"Always on top\" setting."
+            "1.23 - Added keyboard shortcuts."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
@@ -872,5 +904,206 @@ class StatScreen(Tk.Toplevel): # stats window
         self.parent.push_notif("Statistics closed")
         self.destroy()
 
+class Editor(Tk.Toplevel): # editor window
+    def __init__(self, parent : Tk.Tk):
+        self.parent = parent
+        Tk.Toplevel.__init__(self,parent)
+        self.apprunning = True
+        self.title("GBF Loot Tracker - Layout editor")
+        self.iconbitmap('assets/icon.ico')
+        self.resizable(width=False, height=False) # not resizable
+        self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
+        self.assets = {} # loaded images
+        self.layout = self.load_raids() # load raids.json
+        self.layout_string = str(self.layout) # and make a string out of it to detect modifications
+        self.parent.make_button(self, "Verify and save changes", self.save, 0, 0, 2, "we", ("others", "save", (20, 20)))
+        self.top_frame = ttk.Frame(self) # top frame
+        self.top_frame.grid(row=1, column=0, columnspan=2, sticky="we")
+        self.tab_text_var = [] # will contain tab related string vars
+        self.raid_text_var = [] # will contain raid related string vars
+        ttk.Separator(self, orient='horizontal').grid(row=2, column=0, columnspan=2, sticky="we") # separator to make it pretty
+        self.selected = ttk.Frame(self) # bottom frame
+        self.selected.grid(row=3, column=0, columnspan=2, sticky="we")
+        self.current_selected = None # id of the current selected tab
+        self.update_layout() # first update of the layout
+        if self.parent.settings.get("top_most", 0) == 1:
+            self.attributes('-topmost', True)
+
+    def github(self): # open the raids.json from the github repo
+        webbrowser.open("https://github.com/MizaGBF/GBFLT/blob/main/assets/raids.json", new=2, autoraise=True)
+
+    def close(self): # close function
+        if self.layout_string != str(self.layout) and Tk.messagebox.askquestion(title="Editor -Warning", message="You have unsaved changes. Attempt to save now?") == "yes": # ask for save if unsaved changes
+            if not self.save():
+                return
+        self.parent.editor_window = None
+        self.apprunning = False
+        self.destroy()
+
+    def load_raids(self): # load raids.json
+        try:
+            with open('assets/raids.json', mode='r', encoding='utf-8') as f:
+                return json.load(f)
+        except:
+            return []
+
+    def edit_entry(self, sv, index, eindex, ename): # called by Tk.Entry widgets. Parameters are: String Variable (sv), index in the array, eindex is None for tabs or the index of current tab if element is a raid, ename is the element name
+        if eindex is None:
+            self.layout[index][ename] = sv.get()
+        else:
+            if ename == "loot":
+                self.layout[eindex]["raids"][index][ename] = sv.get().split("/")
+            else:
+                self.layout[eindex]["raids"][index][ename] = sv.get()
+
+    def insert_tab(self, i=None): # insert a tab at given position i (if None, append)
+        if i is None:
+            self.layout.append({"text":"New Tab", "tab_image":"bar"})
+        else:
+            self.layout.insert(i+1, {"text":"New Tab", "tab_image":"bar"})
+        # check if bottom frame is enabled and calculate the new index
+        if self.current_selected is None:
+            ti = None
+        elif i is None or self.current_selected < i:
+            ti = self.current_selected
+        else:
+            ti = self.current_selected + 1
+        # update the layout
+        self.update_layout(ti)
+
+    def delete_tab(self, i): # delete tab at given position i
+        if Tk.messagebox.askquestion(title="Editor -Delete Tab", message="Are you sure you want to delete Tab #{}?\nAll of its content will be lost.".format(i+1)) == "yes":
+            del self.layout[i]
+            # check if bottom frame is enabled and calculate the new index
+            if self.current_selected is None or self.current_selected == i:
+                ti = None
+            elif self.current_selected < i:
+                ti = self.current_selected
+            else:
+                ti = self.current_selected - 1
+            # update the layout
+            self.update_layout(ti)
+
+    def move_tab(self, i, change): # move tab by change value in the array (assume the resulting position is valid)
+        self.layout[i], self.layout[i+change] = self.layout[i+change], self.layout[i]
+        # check if bottom frame is enabled and calculate the new index
+        if self.current_selected is None:
+            ti = None
+        elif self.current_selected == i:
+            ti = i+change
+        elif self.current_selected == i+change:
+            ti = i
+        else:
+            ti = self.current_selected
+        # update the layout
+        self.update_layout(ti)
+
+    def insert_raid(self, index, i=None): # insert a raid at position i in tab index (if None, append)
+        if "raids" not in self.layout[index]: self.layout[index]["raids"] = []
+        if i is None:
+            self.layout[index]["raids"].append({"text":"My Raid", "raid_image":"unknown"})
+        else:
+            self.layout[index]["raids"].insert(i+1, {})
+        # update the bottom layout
+        self.update_select(index)
+
+    def delete_raid(self, index, i): # delete a raid at position i in tab index
+        if Tk.messagebox.askquestion(title="Editor -Delete Raid", message="Are you sure you want to delete Raid #{}?\nIts content will be lost.".format(i+1)) == "yes":
+            del self.layout[index]["raids"][i]
+            # update the bottom layout
+            self.update_select(index)
+
+    def move_raid(self, index, i, change): # move a raid at index i, in tab index, by change value (assume the resulting position is valid)
+        self.layout[index]["raids"][i], self.layout[index]["raids"][i+change] = self.layout[index]["raids"][i+change], self.layout[index]["raids"][i]
+        # update the bottom layout
+        self.update_select(index)
+
+    def move_raid_to(self, index, i): # move a raid at index i from tab index to a tab selected by the user
+        target = simpledialog.askstring("Move Raid", "Move this raid to the end of which Tab? (Input its number)")
+        if target is None: return
+        try:
+            tid = int(target)-1
+            if tid < 0 or tid >= len(self.layout): raise Exception() # input check
+            self.layout[tid]["raids"].append(self.layout[index]["raids"][i])
+            del self.layout[index]["raids"][i]
+            self.update_select(index)
+        except:
+            messagebox.showerror("Editor -Error", "Invalid Tab number "+str(target))
+
+    def update_layout(self, index=None): # update the top and bottom frame. Provided index will be passed to update_select()
+        for child in self.top_frame.winfo_children(): # clean current elements
+            child.destroy()
+        self.tab_text_var = [] # and string vars
+        self.update_select(index) # update bottom layout
+        self.parent.make_button(self.top_frame, "Add Tab", self.insert_tab, 0, 0, 2, "we", ("others", "add", (20, 20)))
+        self.parent.make_button(self.top_frame, "Refresh", lambda : self.update_layout(self.current_selected), 0, 2, 2, "w", ("others", "refresh", (20, 20)))
+        for i, t in enumerate(self.layout): # add buttons for each existing tabs
+            Tk.Label(self.top_frame, text="#"+str(i+1)).grid(row=i+1, column=0, sticky="w")
+            Tk.Label(self.top_frame, text="Tab Text").grid(row=i+1, column=1, sticky="w")
+            self.tab_text_var.append(Tk.StringVar())
+            self.tab_text_var[-1].set(t.get("text", ""))
+            self.tab_text_var[-1].trace("w", lambda name, index, mode, sv=self.tab_text_var[-1], i=i: self.edit_entry(sv, i, None, "text"))
+            ttk.Entry(self.top_frame, textvariable=self.tab_text_var[-1]).grid(row=i+1, column=2, sticky="w")
+            Tk.Label(self.top_frame, text="Image", compound=Tk.RIGHT, image=self.parent.load_asset("assets/tabs/" + t.get("tab_image", "").replace(".png", "") + ".png", (20, 20))).grid(row=i+1, column=3, sticky="w")
+            self.tab_text_var.append(Tk.StringVar())
+            self.tab_text_var[-1].set(t.get("tab_image", ""))
+            self.tab_text_var[-1].trace("w", lambda name, index, mode, sv=self.tab_text_var[-1], i=i: self.edit_entry(sv, i, None, "tab_image"))
+            ttk.Entry(self.top_frame, textvariable=self.tab_text_var[-1]).grid(row=i+1, column=4, sticky="w")
+            self.parent.make_button(self.top_frame, "", lambda i=i: self.update_select(i), i+1, 5, 1, "w", ("others", "edit", (20, 20)))
+            self.parent.make_button(self.top_frame, "", lambda i=i: self.update_select(i), i+1, 6, 1, "w", ("others", "add", (20, 20)))
+            if i > 0: self.parent.make_button(self.top_frame, "", lambda i=i: self.move_tab(i, -1), i+1, 7, 1, "w", ("others", "up", (20, 20)))
+            if i < len(self.layout) - 1: self.parent.make_button(self.top_frame, "", lambda i=i: self.move_tab(i, 1), i+1, 8, 1, "w", ("others", "down", (20, 20)))
+            self.parent.make_button(self.top_frame, "", lambda i=i: self.delete_tab(i), i+1, 9, 1, "w", ("others", "del", (20, 20)))
+
+    def update_select(self, index=None): # update only the bottom frame. Provided index will determine if a current tab is selected or not (if None)
+        for child in self.selected.winfo_children(): # clean current elements
+            child.destroy()
+        self.raid_text_var = [] # and string vars
+        if index is not None:
+            self.current_selected = index
+            Tk.Label(self.selected, text="Editing Tab #" + str(index+1)).grid(row=0, column=0, columnspan=6, sticky="w")
+            self.parent.make_button(self.selected, "Add Raid", lambda index=index: self.insert_raid(index), 1, 0, 3, "w", ("others", "add", (20, 20)))
+            for i, r in enumerate(self.layout[index].get("raids", [])): # add buttons for each existing raids of the selected tab
+                Tk.Label(self.selected, text="#"+str(i+1)).grid(row=i+2, column=0, sticky="w")
+                Tk.Label(self.selected, text="Raid ID Name").grid(row=i+2, column=1, sticky="w")
+                self.tab_text_var.append(Tk.StringVar())
+                self.tab_text_var[-1].set(r.get("text", ""))
+                self.tab_text_var[-1].trace("w", lambda name, index, mode, sv=self.tab_text_var[-1], idx=index, i=i: self.edit_entry(sv, i, idx, "text"))
+                ttk.Entry(self.selected, textvariable=self.tab_text_var[-1]).grid(row=i+2, column=2, sticky="w")
+                Tk.Label(self.selected, text="Image", compound=Tk.RIGHT, image=self.parent.load_asset("assets/tabs/" + r.get("raid_image", "").replace(".png", "") + ".png", (20, 20))).grid(row=i+2, column=3, sticky="w")
+                self.tab_text_var.append(Tk.StringVar())
+                self.tab_text_var[-1].set(r.get("raid_image", ""))
+                self.tab_text_var[-1].trace("w", lambda name, index, mode, sv=self.tab_text_var[-1], idx=index, i=i: self.edit_entry(sv, i, idx, "raid_image"))
+                ttk.Entry(self.selected, textvariable=self.tab_text_var[-1]).grid(row=i+2, column=4, sticky="w")
+                Tk.Label(self.selected, text="Loots").grid(row=i+2, column=5, sticky="w")
+                self.tab_text_var.append(Tk.StringVar())
+                self.tab_text_var[-1].set("/".join(r.get("loot", "")))
+                self.tab_text_var[-1].trace("w", lambda name, index, mode, sv=self.tab_text_var[-1], idx=index, i=i: self.edit_entry(sv, i, idx, "loot"))
+                ttk.Entry(self.selected, textvariable=self.tab_text_var[-1]).grid(row=i+2, column=6, sticky="w")
+                self.parent.make_button(self.selected, "", lambda index=index, i=i: self.insert_raid(index, i), i+2, 7, 1, "w", ("others", "add", (20, 20)))
+                self.parent.make_button(self.selected, "", lambda index=index, i=i: self.move_raid_to(index, i), i+2, 8, 1, "w", ("others", "move", (20, 20)))
+                if i > 0: self.parent.make_button(self.selected, "", lambda index=index, i=i: self.move_raid(index, i, -1), i+2, 9, 1, "w", ("others", "up", (20, 20)))
+                if i < len(self.layout[index]["raids"]) - 1: self.parent.make_button(self.selected, "", lambda index=index, i=i: self.move_raid(index, i, 1), i+2, 10, 1, "w", ("others", "down", (20, 20)))
+                self.parent.make_button(self.selected, "", lambda index=index, i=i: self.delete_raid(index, i), i+2, 11, 1, "w", ("others", "del", (20, 20)))
+        else:
+            Tk.Label(self.selected, text="No Tab Selected").grid(row=0, column=0, columnspan=6, sticky="w")
+            self.current_selected = None
+
+    def save(self): # save to raids.json. Return True if success, False if failure/error detected.
+        errors = self.parent.verify_layout(self.layout)
+        if len(errors) > 0:
+            messagebox.showerror("Editor -Error", "Errors are present in the layout:\n"+"\n".join(errors))
+            return False
+        try:
+            with open("assets/raids.json", mode="w", encoding="utf-8") as f:
+                json.dump(self.layout, f, indent=4, ensure_ascii=False)
+            self.layout_string = str(self.layout)
+            if messagebox.askquestion(title="Editor -Success", message="'raids.json' updated with success.\nDo you want to restart the app now?\nNote: If you removed or renamed a raid, its data might be deleted from 'save.json'.") == "yes":
+                self.parent.restart()
+            return True
+        except Exception as e:
+            messagebox.showerror("Editor -Error", "An error occured while saving:\n"+str(e))
+            return False
+
 if __name__ == "__main__": # entry point
-    Interface().run()
+    Tracker().run()

@@ -66,7 +66,7 @@ There are two ways to edit the `assets/raids.json` files:
   
 - **The Easier Way:**  
   
-Open the `assets` folder and double-click on `layout_editor.pyw` to open a simple interface to edit the file. Alternatively, press the button `Layout Editor` under the `settings` tab of the tracker.  
+Under the `settings` tab of the tracker, press the button `Layout Editor` to open an interface allowing you to edit `assets/raids.json`. Alternatively, press the `E` key on your keyboard..  
 ![Editor Preview](https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/preview3.png)  
 - On the top area, you can edit a tab `Text` and `Image` values (the image must be a 20x20 pixels PNG file in the `assets/tabs` folder).  
 - Clicking on a tab `Edit`button lets you open its content in the bottom area.  
