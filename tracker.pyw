@@ -21,6 +21,7 @@ class Tracker(Tk.Tk):
     RARES = ["bar", "sand"] # rare item
     FORBIDDEN = ["version", "last", "settings", "history", "favorites"] # forbidden raid name list
     THEME = ["light", "dark", "forest-light", "forest-dark"] # existing themes
+    DEFAULT_LAYOUT = "[{'tab_image': 'bar', 'text': 'Bars', 'raids': [{'raid_image': 'bhl', 'text': 'BHL', 'loot': ['blue', 'ring3', 'bar']}, {'raid_image': 'akasha', 'text': 'Akasha', 'loot': ['blue', 'ring3', 'bar']}, {'raid_image': 'gohl', 'text': 'Grande', 'loot': ['blue', 'ring3', 'bar']}]}, {'tab_image': 'sand', 'text': 'Revans', 'raids': [{'raid_image': 'mugen', 'text': 'Mugen', 'loot': ['blue', 'wpn_mugen', 'sand']}, {'raid_image': 'diaspora', 'text': 'Diaspora', 'loot': ['blue', 'wpn_diaspora', 'sand']}, {'raid_image': 'siegfried', 'text': 'Siegfried', 'loot': ['blue', 'wpn_siegfried', 'sand']}, {'raid_image': 'siete', 'text': 'Siete', 'loot': ['blue', 'wpn_siete', 'sand']}, {'raid_image': 'cosmos', 'text': 'Cosmos', 'loot': ['blue', 'wpn_cosmos', 'sand']}, {'raid_image': 'agastia', 'text': 'Agastia', 'loot': ['blue', 'wpn_agastia', 'sand']}]}, {'tab_image': 'sand', 'text': 'Sands', 'raids': [{'raid_image': 'ennead', 'text': 'Enneads', 'loot': ['sand']}, {'raid_image': '6d', 'text': '6D', 'loot': ['fireearring', 'sand']}, {'raid_image': 'subaha', 'text': 'SuBaha', 'loot': ['sand']}, {'raid_image': 'hexa', 'text': 'Hexa', 'loot': ['sand']}]}]"
     NOTIF_THRESHOLD = 200 # frame before the notification is deleted
     def __init__(self):
         Tk.Tk.__init__(self,None)
@@ -28,6 +29,7 @@ class Tracker(Tk.Tk):
         self.apprunning = True
         self.version = "0.0"
         self.python = "3.10"
+        self.og_raidlayout = True # set to False if the user has modified raids.json
         self.stats_window = None # reference to the current stat window
         self.import_window = None # reference to the current import window
         self.editor_window = None # reference to the current editor window
@@ -188,7 +190,7 @@ class Tracker(Tk.Tk):
                 d[3].grid(row=3, column=i+1)
             container[l] = d
         self.make_button(frame, "0", lambda rn=rn: self.reset(rn), 4, 0, 1, "we", ("others", "reset", (20, 20)))
-        if is_main_window: self.make_button(frame, "D", lambda rn=rn: self.detach(rn), 4, 1, 1, "we", ("others", "detach", (20, 20)))
+        if is_main_window: self.make_button(frame, "P", lambda rn=rn: self.detach(rn), 4, 1, 1, "we", ("others", "detach", (20, 20)))
 
     def make_button(self, parent : Tk.Tk, text : str, command : Optional[Callable], row : int, column : int, columnspan : int, sticky : str, asset_tuple : Optional[tuple] = None): # function to make our buttons. Asset tuple is composed of 3 elements: folder, asset name and a size tuple (in pixels)
         if asset_tuple is not None:
@@ -342,7 +344,8 @@ class Tracker(Tk.Tk):
                 self.save()
             self.notification_counter += 1
             if self.notification_counter == self.NOTIF_THRESHOLD: # delete notification at threshold
-                self.notification.config(text="")
+                try: self.notification.config(text="")
+                except: pass
             elif self.notification_counter > self.NOTIF_THRESHOLD:
                 self.notification_counter -= 1 # to not rish the value becoming super big
 
@@ -369,6 +372,7 @@ class Tracker(Tk.Tk):
         try:
             with open('assets/raids.json', mode='r', encoding='utf-8') as f:
                 data = json.load(f)
+            self.og_raidlayout = str(data) != self.DEFAULT_LAYOUT
         except Exception as e:
             data = []
             errors = ["Error in raids.json: " + str(e)]
@@ -557,7 +561,7 @@ class Tracker(Tk.Tk):
             with urllib.request.urlopen("https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/manifest.json") as url:
                 data = json.loads(url.read().decode("utf-8"))
             if "version" in data and self.version != "0.0" and not self.cmpVer(self.version, data["version"]):
-                if Tk.messagebox.askquestion(title="Update", message="An update is available.\nCurrent version: {}\nNew Version: {}\nDo you want to download and install?\n- 'save.json' and 'assets/raids.json' will be kept intact.\n- Other files will be overwritten.".format(self.version, data["version"])) == "yes":
+                if Tk.messagebox.askquestion(title="Update", message="An update is available.\nCurrent version: {}\nNew Version: {}\nDo you want to download and install?\n- 'save.json' and 'assets/raids.json' (if modified) will be kept intact.\n- Other files will be overwritten.".format(self.version, data["version"])) == "yes":
                     if self.check_python(data.get("python", "3.10")) is False:
                         if messagebox.askquestion("Outdated Python", "Your python version is v{}.{}.\nAt least Python v{} is recommended.\nUninstall python and install a more recent version.\nOpen the download page?".format(sys.version_info.major, sys.version_info.minor, data.get("python", "3.10"))) == "yes":
                             webbrowser.open("https://www.python.org/downloads/", new=2, autoraise=True)
@@ -592,58 +596,66 @@ class Tracker(Tk.Tk):
                         with open(path, mode="wb") as f:
                             f.write(zip_ref.read(file))
                     # update raids.json
-                    try:
-                        with open('assets/raids.json', mode='r', encoding='utf-8') as f:
-                            old = json.load(f)
-                        # list known raids
-                        changes = ""
+                    if self.og_raidlayout: # if unmodified
                         for file in file_list:
                             if file.endswith("raids.json"):
-                                # load new json
-                                try:
-                                    new = json.loads(zip_ref.read(file).decode('utf-8'))
-                                except:
-                                    new = None
-                                if new is not None:
-                                    # tab check
-                                    for tn in new:
-                                        found = False
-                                        for i in range(len(old)):
-                                            if old[i]["text"] == tn["text"]:
-                                                found = True
-                                                break
-                                        if found: # tab exists
-                                            for rn in tn["raids"]:
-                                                if rn["text"] not in self.raid_data:
-                                                    old[i]["raids"].append(copy.deepcopy(rn))
-                                                    changes += "Adding Raid '{}' to Tab '{}'\n".format(rn["text"], tn["text"])
-                                        else: # tab doesn't exist
-                                            new_tab = copy.deepcopy(tn)
-                                            new_tab["raids"] = []
-                                            for rn in tn["raids"]:
-                                                if rn["text"] not in self.raid_data:
-                                                    new_tab["raids"].append(copy.deepcopy(rn))
-                                            if len(new_tab["raids"]) > 0:
-                                                old.append(new_tab)
-                                                changes += "Adding Tab '{}'\n".format(tn["text"])
-                                    if changes != "" and Tk.messagebox.askquestion(title="Update", message="Differences have been detected between your 'assets/raids.json' and the one from the latest version:\n" + changes + "\nDo you want to apply those differences to your 'assets/raids.json'?") == "yes":
-                                        try:
-                                            json.dumps(str(old)) # check for validity
-                                            with open('assets/raids.json', mode='w', encoding='utf-8') as f:
-                                                json.dump(old, f, indent=4, ensure_ascii=False)
-                                            messagebox.showinfo("Update", "'assets/raids.json' updated.\nUse the Layout Editor to make further modifications.")
-                                        except Exception as ee:
-                                            print("".join(traceback.format_exception(type(ee), ee, ee.__traceback__)))
-                                            messagebox.showerror("Error", "Couldn't update 'assets/raids.json', it has been left untouched:\n" + str(ee))
+                                path = "/".join(file.split('/')[1:])
+                                with open(path, mode="wb") as f:
+                                    f.write(zip_ref.read(file))
                                 break
-                    except:
-                        if Tk.messagebox.askquestion(title="Update", message="An error occured while attempting to detect differences between your 'assets/raids.json' and the one from the latest version.\nDo you want to replace your 'assets/raids.json' with the new one?") == "yes":
+                    else:
+                        try:
+                            with open('assets/raids.json', mode='r', encoding='utf-8') as f:
+                                old = json.load(f)
+                            # list known raids
+                            changes = ""
                             for file in file_list:
                                 if file.endswith("raids.json"):
-                                    new = json.loads(zip_ref.read(file).decode('utf-8'))
-                                    with open('assets/raids.json', mode='w', encoding='utf-8') as f:
-                                        json.dump(new, f, indent=4, ensure_ascii=False)
+                                    # load new json
+                                    try:
+                                        new = json.loads(zip_ref.read(file).decode('utf-8'))
+                                    except:
+                                        new = None
+                                    if new is not None:
+                                        # tab check
+                                        for tn in new:
+                                            found = False
+                                            for i in range(len(old)):
+                                                if old[i]["text"] == tn["text"]:
+                                                    found = True
+                                                    break
+                                            if found: # tab exists
+                                                for rn in tn["raids"]:
+                                                    if rn["text"] not in self.raid_data:
+                                                        old[i]["raids"].append(copy.deepcopy(rn))
+                                                        changes += "Adding Raid '{}' to Tab '{}'\n".format(rn["text"], tn["text"])
+                                            else: # tab doesn't exist
+                                                new_tab = copy.deepcopy(tn)
+                                                new_tab["raids"] = []
+                                                for rn in tn["raids"]:
+                                                    if rn["text"] not in self.raid_data:
+                                                        new_tab["raids"].append(copy.deepcopy(rn))
+                                                if len(new_tab["raids"]) > 0:
+                                                    old.append(new_tab)
+                                                    changes += "Adding Tab '{}'\n".format(tn["text"])
+                                        if changes != "" and Tk.messagebox.askquestion(title="Update", message="Some differences have been detected between your 'assets/raids.json' and the one from the latest version:\n" + changes + "\nDo you want to apply those differences to your 'assets/raids.json'?") == "yes":
+                                            try:
+                                                json.dumps(str(old)) # check for validity
+                                                with open('assets/raids.json', mode='w', encoding='utf-8') as f:
+                                                    json.dump(old, f, indent=4, ensure_ascii=False)
+                                                messagebox.showinfo("Update", "'assets/raids.json' updated.\nUse the Layout Editor to make further modifications.")
+                                            except Exception as ee:
+                                                print("".join(traceback.format_exception(type(ee), ee, ee.__traceback__)))
+                                                messagebox.showerror("Error", "Couldn't update 'assets/raids.json', it has been left untouched:\n" + str(ee))
                                     break
+                        except:
+                            if Tk.messagebox.askquestion(title="Update", message="An error occured while attempting to detect differences between your 'assets/raids.json' and the one from the latest version.\nDo you want to replace your 'assets/raids.json' with the new one?") == "yes":
+                                for file in file_list:
+                                    if file.endswith("raids.json"):
+                                        new = json.loads(zip_ref.read(file).decode('utf-8'))
+                                        with open('assets/raids.json', mode='w', encoding='utf-8') as f:
+                                            json.dump(new, f, indent=4, ensure_ascii=False)
+                                        break
             messagebox.showinfo("Update", "Update successful.\nThe application will now restart.")
             self.restart()
         except Exception as e:
@@ -774,7 +786,8 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self): # display the changelog
         changelog = [
-            "1.34 - Main and Detached Windows now have a minimum size of 240x150 pixels.",
+            "1.35 - Popup windows won't appear out of the screen on startup. Reworked the Popup button. 'assets/raids.json' will auto-update if unmodified. Reset button added to the Editor.",
+            "1.34 - Main and Popup Windows now have a minimum size of 240x150 pixels.",
             "1.33 - Added Multi-Window support.",
             "1.32 - The Layout Editor is now part of the Tracker itself.",
             "1.31 - Added more Python version checks, at startup and when opening the Layout Editor.",
@@ -907,7 +920,8 @@ class DetachedRaid(Tk.Toplevel): # detached raid window
             self.data[k][0] = self.parent.raid_data[self.rname][k][0]
         self.parent.update_label_sub(self.rname, self.data) # update the window
         if position is not None: # set position if given
-            self.geometry('+{}+{}'.format(position[0], position[1]))
+            ms = self.maxsize()
+            self.geometry('+{}+{}'.format(min(max(position[0], 0), ms[0]-240), min(max(position[1], 0), ms[1]-150))) # stay in screen bound
         self.parent.modified = True
 
     def close(self):
@@ -979,7 +993,6 @@ class Editor(Tk.Toplevel): # editor window
     def __init__(self, parent : Tk.Tk):
         self.parent = parent
         Tk.Toplevel.__init__(self,parent)
-        self.apprunning = True
         self.title("GBF Loot Tracker - Layout editor")
         self.iconbitmap('assets/icon.ico')
         self.resizable(width=False, height=False) # not resizable
@@ -987,28 +1000,33 @@ class Editor(Tk.Toplevel): # editor window
         self.assets = {} # loaded images
         self.layout = self.load_raids() # load raids.json
         self.layout_string = str(self.layout) # and make a string out of it to detect modifications
-        self.parent.make_button(self, "Verify and save changes", self.save, 0, 0, 2, "we", ("others", "save", (20, 20)))
+        self.parent.make_button(self, "Verify and save changes", self.save, 0, 0, 3, "we", ("others", "save", (20, 20)))
+        self.parent.make_button(self, "Add Tab", self.insert_tab, 1, 0, 1, "we", ("others", "add", (20, 20)))
+        self.parent.make_button(self, "Refresh", lambda : self.update_layout(self.current_selected), 1, 1, 1, "we", ("others", "refresh", (20, 20)))
+        self.parent.make_button(self, "Full Reset", self.reset, 1, 2, 1, "we", ("others", "reset", (20, 20)))
         self.top_frame = ttk.Frame(self) # top frame
-        self.top_frame.grid(row=1, column=0, columnspan=2, sticky="we")
+        self.top_frame.grid(row=2, column=0, columnspan=3, sticky="we")
         self.tab_text_var = [] # will contain tab related string vars
         self.raid_text_var = [] # will contain raid related string vars
-        ttk.Separator(self, orient='horizontal').grid(row=2, column=0, columnspan=2, sticky="we") # separator to make it pretty
+        ttk.Separator(self, orient='horizontal').grid(row=3, column=0, columnspan=3, sticky="we") # separator to make it pretty
         self.selected = ttk.Frame(self) # bottom frame
-        self.selected.grid(row=3, column=0, columnspan=2, sticky="we")
+        self.selected.grid(row=4, column=0, columnspan=3, sticky="we")
         self.current_selected = None # id of the current selected tab
         self.update_layout() # first update of the layout
         if self.parent.settings.get("top_most", 0) == 1:
             self.attributes('-topmost', True)
 
-    def github(self): # open the raids.json from the github repo
-        webbrowser.open("https://github.com/MizaGBF/GBFLT/blob/main/assets/raids.json", new=2, autoraise=True)
+    def reset(self): # reset layout
+        if Tk.messagebox.askquestion(title="Editor - Reset", message="Are you sure that you want to reset the layout?") == "yes":
+            self.layout = json.loads(self.parent.DEFAULT_LAYOUT.replace("'", '"'))
+            self.current_selected = None
+            self.update_layout()
 
     def close(self): # close function
-        if self.layout_string != str(self.layout) and Tk.messagebox.askquestion(title="Editor -Warning", message="You have unsaved changes. Attempt to save now?") == "yes": # ask for save if unsaved changes
+        if self.layout_string != str(self.layout) and Tk.messagebox.askquestion(title="Editor - Warning", message="You have unsaved changes. Attempt to save now?") == "yes": # ask for save if unsaved changes
             if not self.save():
                 return
         self.parent.editor_window = None
-        self.apprunning = False
         self.destroy()
 
     def load_raids(self): # load raids.json
@@ -1106,8 +1124,6 @@ class Editor(Tk.Toplevel): # editor window
             child.destroy()
         self.tab_text_var = [] # and string vars
         self.update_select(index) # update bottom layout
-        self.parent.make_button(self.top_frame, "Add Tab", self.insert_tab, 0, 0, 2, "we", ("others", "add", (20, 20)))
-        self.parent.make_button(self.top_frame, "Refresh", lambda : self.update_layout(self.current_selected), 0, 2, 2, "w", ("others", "refresh", (20, 20)))
         for i, t in enumerate(self.layout): # add buttons for each existing tabs
             Tk.Label(self.top_frame, text="#"+str(i+1)).grid(row=i+1, column=0, sticky="w")
             Tk.Label(self.top_frame, text="Tab Text").grid(row=i+1, column=1, sticky="w")
