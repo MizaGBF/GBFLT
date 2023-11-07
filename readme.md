@@ -43,6 +43,9 @@ If it doesn't work or if you want to manually update:
 * `E`: Open the Layout Editor.  
 * `R`: Restart the application.  
 * `U`: Check for updates.  
+* `M`: Memorize the currently opened Raid Popups positions.  
+* `O`: Open the memorized Raid popups to their saved positions.  
+* `C`: Close all opened Raid popups.  
 * `Page Up` or `Up`: Go to the top tab on the left.  
 * `Page Down` or `Down`: Go to the top tab on the right.  
 * `Left`: Go to the raid on the left.  

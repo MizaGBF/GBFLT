@@ -108,20 +108,11 @@ class Tracker(Tk.Tk):
         self.check_update.set(self.settings.get("check_update", 0))
         
         # shortcut
-        for k in ['<t>', '<T>']:  self.bind(k, self.key_toggle_topmost)
-        for k in ['<s>', '<S>']: self.bind(k, self.key_toggle_stat)
-        for k in ['<l>', '<L>']: self.bind(k, self.key_toggle_theme)
-        for k in ['<n>', '<N>']: self.bind(k, self.key_toggle_notif)
-        for k in ['<e>', '<E>']: self.bind(k, self.key_open_editor)
-        for k in ['<r>', '<R>']: self.bind(k, self.key_restart)
-        for k in ['<u>', '<U>']: self.bind(k, self.key_update)
-        for k in ['<Prior>', '<Next>', '<Left>', '<Right>', '<Up>', '<Down>']: self.bind(k, self.key_page)
-        for i in range(1, 13): self.bind('<Shift-F{}>'.format(i), self.key_set_fav)
-        for i in range(1, 13): self.bind('<F{}>'.format(i), self.key_select_fav)
+        self.set_general_binding(self)
         
         # notification
         self.notification = Tk.Label(self, text="")
-        if self.settings.get("show_notif", 0) == 1: self.notification.grid(row=1, column=0, sticky="w")
+        if self.settings.get("show_notif", 1) == 1: self.notification.grid(row=1, column=0, sticky="w")
         # welcome notification and easter eggs
         now = datetime.now()
         if now.day == calendar.monthrange(now.year, now.month)[1]: self.push_notif(["Immunity Lily blesses your rolls.", "GOLEM GET YE GONE!"][now.month%2]) # legfest (alternate the messages depending on the month)
@@ -132,6 +123,7 @@ class Tracker(Tk.Tk):
         elif now.day == 10 and now.month == 3: self.push_notif("Another year on Granblue Fantasy...")
         elif now.day == 1 and now.month == 4: self.push_notif("???")
         elif now.day == 29 and now.month == 4: self.push_notif("Golden Week is starting!")
+        elif savedata is None: self.push_notif("First time user? Take a look at the readme!")
         else: self.push_notif("May luck be with you.") # random welcome message
         
         # end
@@ -155,7 +147,29 @@ class Tracker(Tk.Tk):
         self.last_savedata_string = str(self.get_save_data()) # get current state of the save as a string
         self.after(60000, self.save_task)
 
-    def set_tab_content(self, parent : Tk.Tk, layout : dict, container : dict, is_main_window : bool):
+    def set_general_binding(self, widget : Tk.Tk, limit_to : Optional[list] = None): # set shortcut keys
+        key_bindings = [
+            ('t', self.key_toggle_topmost),
+            ('s', self.key_toggle_stat),
+            ('l', self.key_toggle_theme),
+            ('n', self.key_toggle_notif),
+            ('e', self.key_open_editor),
+            ('r', self.key_restart),
+            ('u', self.key_update),
+            ('m', self.key_memorize),
+            ('o', self.key_open_memorized),
+            ('c', self.key_close_popups),
+        ]
+        for k in key_bindings:
+            if limit_to is None or k[0] in limit_to:
+                widget.bind('<{}>'.format(k[0]), k[1])
+                widget.bind('<{}>'.format(k[0].upper()), k[1])
+        if limit_to is None:
+            for k in ['<Prior>', '<Next>', '<Left>', '<Right>', '<Up>', '<Down>']: widget.bind(k, self.key_page)
+            for i in range(1, 13): widget.bind('<Shift-F{}>'.format(i), self.key_set_fav)
+            for i in range(1, 13): widget.bind('<F{}>'.format(i), self.key_select_fav)
+
+    def set_tab_content(self, parent : Tk.Tk, layout : dict, container : dict, is_main_window : bool): # contruct a tab content (used by popup windows too)
         rn = layout["text"]
         frame = ttk.Frame(parent)
         frame.grid(row=0, column=0)
@@ -303,6 +317,35 @@ class Tracker(Tk.Tk):
     def key_update(self, ev : Tk.Event): # shortcut to check for update
         self.check_new_update(False)
 
+    def key_memorize(self, ev : Tk.Event): # shortcut to memorize popup positions
+        memorized = {}
+        for rname in self.raid_data: # check opened windows and save their positions
+            if self.raid_data[rname][""][5] is not None:
+                memorized[rname] = [self.raid_data[rname][""][5].winfo_rootx(), self.raid_data[rname][""][5].winfo_rooty()] # save the positions
+        self.settings['memorized'] = memorized
+        self.modified = True
+        self.push_notif("Popup Layout has been saved.")
+
+    def key_open_memorized(self, ev : Tk.Event): # shortcut to load memorized popup positions
+        opened = False
+        for rname, p in self.settings.get('memorized', {}).items():
+            if rname in self.raid_data:
+                self.detach(rname, p)
+                opened = True
+        if opened:
+            self.push_notif("Popups have been opened to their saved positions.")
+        else:
+            self.push_notif("No Popup Layout saved. Use the 'M' key to save one.")
+
+    def key_close_popups(self, ev : Tk.Event): # shortcut to close opened raid popups
+        closed = False
+        for rname in self.raid_data: # check opened windows and save their positions
+            if self.raid_data[rname][""][5] is not None:
+                self.raid_data[rname][""][5].close()
+                closed = True
+        if closed:
+            self.push_notif("Popups have been closed.")
+
     def key_page(self, ev : Tk.Event):  # key shortcut to change tabs
         top_pos = self.top_tab.index("current")
         top_len = len(self.top_tab.winfo_children())
@@ -333,7 +376,7 @@ class Tracker(Tk.Tk):
                 if v[0] == top_pos and v[1] == sub_pos:
                     self.favorites[index] = k
                     self.modified = True
-                    self.push_notif("'F{}' key set to '{}'".format(index+1, k))
+                    self.push_notif("'F{}' key set to '{}'.".format(index+1, k))
                     return
 
     def key_select_fav(self, ev): # load a favorite
@@ -360,6 +403,7 @@ class Tracker(Tk.Tk):
         for rname in self.raid_data: # check opened windows and save their positions
             if self.raid_data[rname][""][5] is not None:
                 self.settings["detached"][rname] = [self.raid_data[rname][""][5].winfo_rootx(), self.raid_data[rname][""][5].winfo_rooty()] # save their positions
+                self.raid_data[rname][""][5].close()
                 self.modified = True
             elif rname in self.settings['detached']:
                 del self.settings['detached'][rname]
@@ -400,7 +444,7 @@ class Tracker(Tk.Tk):
             for rname in self.raid_data:
                 if self.raid_data[rname][""][5] is not None:
                     self.raid_data[rname][""][5].attributes('-topmost', True)
-            self.push_notif("Windows will always be on top")
+            self.push_notif("Windows will always be on top.")
         else:
             self.attributes('-topmost', False)
             if self.stats_window is not None: self.stats_window.attributes('-topmost', False)
@@ -411,14 +455,14 @@ class Tracker(Tk.Tk):
             for rname in self.raid_data:
                 if self.raid_data[rname][""][5] is not None:
                     self.raid_data[rname][""][5].attributes('-topmost', False)
-            self.push_notif("Windows won't be on top")
+            self.push_notif("Windows won't be on top.")
 
     def toggle_notif(self): # toggle for notifications
         self.modified = True
         self.settings["show_notif"] = self.show_notif.get()
         if self.settings["show_notif"] == 1:
             self.notification.grid(row=1, column=0, sticky="w")
-            self.push_notif("Notifications will appear here")
+            self.push_notif("Notifications will appear here.")
         else:
             self.notification.grid_forget()
 
@@ -432,7 +476,7 @@ class Tracker(Tk.Tk):
                 if self.THEME[i] == self.settings.get("theme", self.THEME[0]):
                     self.settings["theme"]= self.THEME[(i+1)%len(self.THEME)] # switch to the next one
                     self.call("set_theme", self.settings["theme"])
-                    self.push_notif("Theme set to '{}'".format(self.settings["theme"]))
+                    self.push_notif("Theme set to '{}'.".format(self.settings["theme"]))
                     self.modified = True
                     return
             # not found
@@ -501,22 +545,24 @@ class Tracker(Tk.Tk):
                 except: pass
                 self.modified = True
                 self.update_label(rname)
-                self.push_notif("Raid '{}' has been reset".format(rname))
+                self.push_notif("Raid '{}' has been reset.".format(rname))
 
-    def detach(self, rname : str, position : Optional[list] = None): # raid name
+    def detach(self, rname : str, position : Optional[list] = None): # open popup for specified raid name
         if rname in self.raid_data:
             if self.raid_data[rname][""][5] is not None:
                 self.raid_data[rname][""][5].lift()
+                if position is not None:
+                    self.raid_data[rname][""][5].setPosition(position[0], position[1])
             else:
                 self.raid_data[rname][""][5] = DetachedRaid(self, rname, position)
 
-    def update_label(self, rname : str): # raid name
+    def update_label(self, rname : str): # update the labels of the tab content
         if rname in self.raid_data:
             self.update_label_sub(rname, self.raid_data[rname])
             if self.raid_data[rname][""][5] is not None:
                 self.update_label_sub(rname, self.raid_data[rname][""][5].data)
 
-    def update_label_sub(self, rname : str, data : dict):
+    def update_label_sub(self, rname : str, data : dict): # sub routine of update_label: can specify the target raid data
         total = data[""][0]
         chest_count = 0
         if rname in self.got_chest: # get total of chest
@@ -748,7 +794,7 @@ class Tracker(Tk.Tk):
                 try:
                     with open("save.json", mode="w", encoding="utf-8") as f:
                         json.dump(savedata, f)
-                    self.push_notif("Changes have been saved")
+                    self.push_notif("Changes have been saved.")
                 except Exception as e:
                     print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
                     messagebox.showerror("Error", "An error occured while saving:\n"+str(e))
@@ -779,14 +825,14 @@ class Tracker(Tk.Tk):
 
     def github(self): # open the github repo
         webbrowser.open("https://github.com/MizaGBF/GBFLT", new=2, autoraise=True)
-        self.push_notif("Link opened in your broswer")
+        self.push_notif("Link opened in your broswer.")
 
     def github_issue(self): # open the github repo on the issues page
         webbrowser.open("https://github.com/MizaGBF/GBFLT/issues", new=2, autoraise=True)
-        self.push_notif("Link opened in your broswer")
+        self.push_notif("Link opened in your broswer.")
 
     def show_shortcut(self):
-        messagebox.showinfo("Keyboard Shortcuts", "- T: Toggle the Always on top settings.\n- S: Toggle the Statistics window.\n- L: Toggle the Light and Dark themes.\n- N: Toggle the Notification Bar.\n- E: Open the Layout Editor.\n- R: Restart the application.\n- U: Check for updates.\n- Page Up or Up: Go to the top tab on the left.\n- Page Down or Down: Go to the top tab on the right.\n- Left: Go to the raid on the left.\n- Right: Go to the raid on the right.\n- Shit+F1~F12: Set the current raid to the Function Key pressed.\n- F1~F12: Go to the raid associated to this Function key.")
+        messagebox.showinfo("Keyboard Shortcuts", "- T: Toggle the Always on top settings.\n- S: Toggle the Statistics window.\n- L: Toggle the Light and Dark themes.\n- N: Toggle the Notification Bar.\n- E: Open the Layout Editor.\n- R: Restart the application.\n- U: Check for updates.\n- M: Memorize the currently opened Raid Popups positions.\n- O: Open the memorized Raid popups to their saved positions.\n- C: Close all opened Raid popups.\n- Page Up or Up: Go to the top tab on the left.\n- Page Down or Down: Go to the top tab on the right.\n- Left: Go to the raid on the left.\n- Right: Go to the raid on the right.\n- Shit+F1~F12: Set the current raid to the Function Key pressed.\n- F1~F12: Go to the raid associated to this Function key.")
 
     def show_favorite(self): # favorite list
         msg = ""
@@ -798,6 +844,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self): # display the changelog
         changelog = [
+            "1.39 - Added keyboard shortcuts to memorize and open Raid popups, and another to close all Raid popups.",
             "1.38 - Added welcome notifications and a Preview button in the Editor.",
             "1.37 - Fixed the \"add tab between\" Editor buttons.",
             "1.36 - Optimized the Layout Editor performances. Fixed the save data warnings not being displayed.",
@@ -806,13 +853,12 @@ class Tracker(Tk.Tk):
             "1.33 - Added Multi-Window support.",
             "1.32 - The Layout Editor is now part of the Tracker itself.",
             "1.31 - Added more Python version checks, at startup and when opening the Layout Editor.",
-            "1.30 - Added the Data Importer and the 'Notification Bar' keyboard shortcut.",
-            "1.29 - Added the Forest TTK Themes. Bug fix: Impossible to change the theme on a fresh save file."
+            "1.30 - Added the Data Importer and the 'Notification Bar' keyboard shortcut."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
     def show_credits(self):
-        messagebox.showinfo("Credits", "Author: Mizako\nContributors: Zell\nTesting: Slugi\n\nVisual Themes:\nhttps://github.com/rdbende/Azure-ttk-theme\nhttps://github.com/rdbende/Forest-ttk-theme")
+        messagebox.showinfo("Credits", "https://github.com/MizaGBF/GBFLT\nAuthor: Mizako\nContributors: Zell\nTesting: Slugi\n\nVisual Themes:\nhttps://github.com/rdbende/Azure-ttk-theme\nhttps://github.com/rdbende/Forest-ttk-theme")
 
     def export_to_text(self): # export data to text
         today = datetime.now()
@@ -930,10 +976,14 @@ class DetachedRaid(Tk.Toplevel): # detached raid window
         for k in self.parent.raid_data[self.rname]: # mirror values
             self.data[k][0] = self.parent.raid_data[self.rname][k][0]
         self.parent.update_label_sub(self.rname, self.data) # update the window
+        self.parent.set_general_binding(self, ["t", "s", "l", "n"])
         if position is not None: # set position if given
-            ms = self.maxsize()
-            self.geometry('+{}+{}'.format(min(max(position[0], 0), ms[0]-240), min(max(position[1], 0), ms[1]-150))) # stay in screen bound
+            self.setPosition(position[0], position[1])
         self.parent.modified = True
+
+    def setPosition(self, x : int, y : int): # set window position
+        ms = self.maxsize()
+        self.geometry('+{}+{}'.format(min(max(x, 0), ms[0]-240), min(max(y, 0), ms[1]-150))) # stay in screen bound
 
     def close(self):
         self.parent.raid_data[self.rname][""][5] = None
@@ -955,7 +1005,7 @@ class StatScreen(Tk.Toplevel): # stats window
         self.update_data()
         if self.parent.settings.get("top_most", 0) == 1:
             self.attributes('-topmost', True)
-        self.parent.push_notif("Statistics opened")
+        self.parent.push_notif("Statistics opened.")
 
     def update_data(self): # update the data shown on the window
         # cleanup
@@ -997,7 +1047,7 @@ class StatScreen(Tk.Toplevel): # stats window
 
     def close(self): # called on close
         self.parent.stats_window = None
-        self.parent.push_notif("Statistics closed")
+        self.parent.push_notif("Statistics closed.")
         self.destroy()
 
 class Editor(Tk.Toplevel): # editor window
