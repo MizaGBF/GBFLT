@@ -129,7 +129,7 @@ class Tracker(Tk.Tk):
         if self.check_python(self.python) is False:
             errors.append("Your Python version is outdated ({}.{}). Consider uninstalling it for a recent version.".format(sys.version_info.major, sys.version_info.minor))
         self.top_tab.grid(row=0, column=0, columnspan=10, sticky="wnes")
-        if savedata is not None: self.apply_savedata(savedata)
+        if savedata is not None: errors += self.apply_savedata(savedata)
         if self.last_tab in self.tab_tree:
             t = self.tab_tree[self.last_tab]
             self.top_tab.select(t[0]) # select top tab
@@ -138,7 +138,8 @@ class Tracker(Tk.Tk):
             self.detach(rn, v)
         if len(errors) > 0:
             if len(errors) > 6:
-                errors = errors[:6] + ["And {} more errors...".format(len(errors)-6)]
+                tmp = ["And {} more errors...".format(len(errors)-6)]
+                errors = errors[:6] + tmp
             messagebox.showerror("Important", "The following warnings/errors occured during startup:\n- " + "\n- ".join(errors) + "\n\nIt's recommended to close the app and fix those issues, if possible.")
         elif self.settings.get("check_update", 0) == 1:
             self.check_new_update()
@@ -715,14 +716,17 @@ class Tracker(Tk.Tk):
         self.last_tab = savedata.get("last", None)
         for k, v in savedata.items(): # set each raid
             if k in self.FORBIDDEN: continue
-            for x, y in v.items():
-                if k in self.raid_data and x in self.raid_data[k]:
-                    self.raid_data[k][x][0] = y
-                else:
-                    self.history.pop(x, None)
-                    if not missing:
-                        missing = True
-                        errors.append("Values from save.json don't seem in use anymore and will be discarded (Example: {})".format(k)) # warning
+            if k in self.raid_data:
+                for x, y in v.items():
+                    if x in self.raid_data[k]:
+                        self.raid_data[k][x][0] = y
+                    else:
+                        errors.append("Loot '{}' from raid '{}' isn't in use anymore and will be discarded in the next save data.".format(x, k)) # warning
+            else:
+                self.history.pop(k, None)
+                if not missing:
+                    missing = True
+                    errors.append("Raid '{}' isn't in use anymore and will be discarded in the next save data.".format(k)) # warning
             self.update_label(k)
         return errors
 
@@ -786,6 +790,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self): # display the changelog
         changelog = [
+            "1.36 - Optimized the Layout Editor performances. Fixed the save data warnings not being displayed.",
             "1.35 - Popup windows won't appear out of the screen on startup. Reworked the Popup button. 'assets/raids.json' will auto-update if unmodified. Reset button added to the Editor.",
             "1.34 - Main and Popup Windows now have a minimum size of 240x150 pixels.",
             "1.33 - Added Multi-Window support.",
@@ -795,8 +800,7 @@ class Tracker(Tk.Tk):
             "1.29 - Added the Forest TTK Themes. Bug fix: Impossible to change the theme on a fresh save file.",
             "1.28 - Added \"Credits\" and \"What's New?\" buttons.",
             "1.27 - Made the app temporarly python 3.9-friendly. Added a python version check during automatic updates, to avoid accidental bricking.",
-            "1.26 - Added the \"Favorited\" button.",
-            "1.25 - Added the \"Shortcut List\" button. Fixed the \"Reset\" buttons position to the corner."
+            "1.26 - Added the \"Favorited\" button."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
@@ -1008,9 +1012,15 @@ class Editor(Tk.Toplevel): # editor window
         self.top_frame.grid(row=2, column=0, columnspan=3, sticky="we")
         self.tab_text_var = [] # will contain tab related string vars
         self.raid_text_var = [] # will contain raid related string vars
+        self.tab_container = [] # contain widgets for tabs
+        self.raid_container = [] # contain widgets for raids
         ttk.Separator(self, orient='horizontal').grid(row=3, column=0, columnspan=3, sticky="we") # separator to make it pretty
         self.selected = ttk.Frame(self) # bottom frame
         self.selected.grid(row=4, column=0, columnspan=3, sticky="we")
+        self.raid_header = Tk.Label(self.selected, text="No Tab Selected")
+        self.raid_header.grid(row=0, column=0, columnspan=6, sticky="w")
+        self.raid_header_add = self.parent.make_button(self.selected, "Add Raid", self.reset, 1, 0, 3, "w", ("others", "add", (20, 20)))
+        self.raid_header_add.grid_forget()
         self.current_selected = None # id of the current selected tab
         self.update_layout() # first update of the layout
         if self.parent.settings.get("top_most", 0) == 1:
@@ -1120,60 +1130,144 @@ class Editor(Tk.Toplevel): # editor window
             messagebox.showerror("Editor -Error", "Invalid Tab number "+str(target))
 
     def update_layout(self, index=None): # update the top and bottom frame. Provided index will be passed to update_select()
-        for child in self.top_frame.winfo_children(): # clean current elements
-            child.destroy()
-        self.tab_text_var = [] # and string vars
         self.update_select(index) # update bottom layout
+        
+        while len(self.tab_container) > len(self.layout):
+            for w in self.tab_container[-1]: w.destroy()
+            self.tab_container.pop()
+            self.tab_text_var.pop()
+            self.tab_text_var.pop()
+        
         for i, t in enumerate(self.layout): # add buttons for each existing tabs
-            Tk.Label(self.top_frame, text="#"+str(i+1)).grid(row=i+1, column=0, sticky="w")
-            Tk.Label(self.top_frame, text="Tab Text").grid(row=i+1, column=1, sticky="w")
-            self.tab_text_var.append(Tk.StringVar())
-            self.tab_text_var[-1].set(t.get("text", ""))
-            self.tab_text_var[-1].trace("w", lambda name, index, mode, sv=self.tab_text_var[-1], i=i: self.edit_entry(sv, i, None, "text"))
-            ttk.Entry(self.top_frame, textvariable=self.tab_text_var[-1]).grid(row=i+1, column=2, sticky="w")
-            Tk.Label(self.top_frame, text="Image", compound=Tk.RIGHT, image=self.parent.load_asset("assets/tabs/" + t.get("tab_image", "").replace(".png", "") + ".png", (20, 20))).grid(row=i+1, column=3, sticky="w")
-            self.tab_text_var.append(Tk.StringVar())
-            self.tab_text_var[-1].set(t.get("tab_image", ""))
-            self.tab_text_var[-1].trace("w", lambda name, index, mode, sv=self.tab_text_var[-1], i=i: self.edit_entry(sv, i, None, "tab_image"))
-            ttk.Entry(self.top_frame, textvariable=self.tab_text_var[-1]).grid(row=i+1, column=4, sticky="w")
-            self.parent.make_button(self.top_frame, "", lambda i=i: self.update_select(i), i+1, 5, 1, "w", ("others", "edit", (20, 20)))
-            self.parent.make_button(self.top_frame, "", lambda i=i: self.update_select(i), i+1, 6, 1, "w", ("others", "add", (20, 20)))
-            if i > 0: self.parent.make_button(self.top_frame, "", lambda i=i: self.move_tab(i, -1), i+1, 7, 1, "w", ("others", "up", (20, 20)))
-            if i < len(self.layout) - 1: self.parent.make_button(self.top_frame, "", lambda i=i: self.move_tab(i, 1), i+1, 8, 1, "w", ("others", "down", (20, 20)))
-            self.parent.make_button(self.top_frame, "", lambda i=i: self.delete_tab(i), i+1, 9, 1, "w", ("others", "del", (20, 20)))
+            if i == len(self.tab_container): # create fresh line and store in tab_container
+                self.tab_container.append([])
+                label = Tk.Label(self.top_frame, text="#"+str(i+1))
+                label.grid(row=i+1, column=0, sticky="w")
+                self.tab_container[-1].append(label)
+                label = Tk.Label(self.top_frame, text="Tab Text")
+                label.grid(row=i+1, column=1, sticky="w")
+                self.tab_container[-1].append(label)
+                self.tab_text_var.append(Tk.StringVar())
+                self.tab_text_var[-1].set(t.get("text", ""))
+                self.tab_text_var[-1].trace_add("write", lambda name, index, mode, sv=self.tab_text_var[-1], i=i: self.edit_entry(sv, i, None, "text"))
+                entry = ttk.Entry(self.top_frame, textvariable=self.tab_text_var[-1])
+                entry.grid(row=i+1, column=2, sticky="w")
+                self.tab_container[-1].append(entry)
+                label = Tk.Label(self.top_frame, text="Image", compound=Tk.RIGHT, image=self.parent.load_asset("assets/tabs/" + t.get("tab_image", "").replace(".png", "") + ".png", (20, 20)))
+                label.grid(row=i+1, column=3, sticky="w")
+                self.tab_container[-1].append(label)
+                self.tab_text_var.append(Tk.StringVar())
+                self.tab_text_var[-1].set(t.get("tab_image", ""))
+                self.tab_text_var[-1].trace_add("write", lambda name, index, mode, sv=self.tab_text_var[-1], i=i: self.edit_entry(sv, i, None, "tab_image"))
+                entry = ttk.Entry(self.top_frame, textvariable=self.tab_text_var[-1])
+                entry.grid(row=i+1, column=4, sticky="w")
+                self.tab_container[-1].append(entry)
+                self.tab_container[-1].append(self.parent.make_button(self.top_frame, "", lambda i=i: self.update_select(i), i+1, 5, 1, "w", ("others", "edit", (20, 20))))
+                self.tab_container[-1].append(self.parent.make_button(self.top_frame, "", lambda i=i: self.update_select(i), i+1, 6, 1, "w", ("others", "add", (20, 20))))
+                self.tab_container[-1].append(self.parent.make_button(self.top_frame, "", lambda i=i: self.move_tab(i, -1), i+1, 7, 1, "w", ("others", "up", (20, 20))))
+                if i == 0: self.tab_container[-1][-1].grid_forget()
+                self.tab_container[-1].append(self.parent.make_button(self.top_frame, "", lambda i=i: self.move_tab(i, 1), i+1, 8, 1, "w", ("others", "down", (20, 20))))
+                if i == len(self.layout) - 1: self.tab_container[-1][-1].grid_forget()
+                self.tab_container[-1].append(self.parent.make_button(self.top_frame, "", lambda i=i: self.delete_tab(i), i+1, 9, 1, "w", ("others", "del", (20, 20))))
+            else: #edit existing line
+                self.tab_text_var[i*2].trace_remove("write", self.tab_text_var[i*2].trace_info()[0][1])
+                self.tab_text_var[i*2].set(t.get("text", ""))
+                self.tab_text_var[i*2].trace_add("write", lambda name, index, mode, sv=self.tab_text_var[i*2], i=i: self.edit_entry(sv, i, None, "text"))
+                self.tab_container[i][3].config(image=self.parent.load_asset("assets/tabs/" + t.get("tab_image", "").replace(".png", "") + ".png", (20, 20)))
+                self.tab_text_var[i*2+1].trace_remove("write", self.tab_text_var[i*2+1].trace_info()[0][1])
+                self.tab_text_var[i*2+1].set(t.get("tab_image", ""))
+                self.tab_text_var[i*2+1].trace_add("write", lambda name, index, mode, sv=self.tab_text_var[i*2+1], i=i: self.edit_entry(sv, i, None, "tab_image"))
+                try:
+                    if i == 0: self.tab_container[i][7].grid_forget()
+                    else: self.tab_container[i][7].grid(row=i+1, column=7, columnspan=1)
+                except:
+                    pass
+                try:
+                    if i == len(self.layout) - 1: self.tab_container[i][8].grid_forget()
+                    else: self.tab_container[i][8].grid(row=i+1, column=8, columnspan=1)
+                except:
+                    pass
 
     def update_select(self, index=None): # update only the bottom frame. Provided index will determine if a current tab is selected or not (if None)
-        for child in self.selected.winfo_children(): # clean current elements
-            child.destroy()
-        self.raid_text_var = [] # and string vars
         if index is not None:
+            while len(self.raid_container) > len(self.layout[index].get("raids", [])):
+                for w in self.raid_container[-1]: w.destroy()
+                self.raid_container.pop()
+                self.raid_text_var.pop()
+                self.raid_text_var.pop()
+                self.raid_text_var.pop()
             self.current_selected = index
-            Tk.Label(self.selected, text="Editing Tab #" + str(index+1)).grid(row=0, column=0, columnspan=6, sticky="w")
-            self.parent.make_button(self.selected, "Add Raid", lambda index=index: self.insert_raid(index), 1, 0, 3, "w", ("others", "add", (20, 20)))
+            self.raid_header.config(text="Editing Tab #" + str(index+1))
+            try:
+                self.raid_header_add.grid(row=1, column=0, columnspan=3, sticky="w")
+                self.raid_header_add.config(command=lambda index=index: self.insert_raid(index))
+            except:
+                pass
             for i, r in enumerate(self.layout[index].get("raids", [])): # add buttons for each existing raids of the selected tab
-                Tk.Label(self.selected, text="#"+str(i+1)).grid(row=i+2, column=0, sticky="w")
-                Tk.Label(self.selected, text="Raid ID Name").grid(row=i+2, column=1, sticky="w")
-                self.raid_text_var.append(Tk.StringVar())
-                self.raid_text_var[-1].set(r.get("text", ""))
-                self.raid_text_var[-1].trace("w", lambda name, index, mode, sv=self.raid_text_var[-1], idx=index, i=i: self.edit_entry(sv, i, idx, "text"))
-                ttk.Entry(self.selected, textvariable=self.raid_text_var[-1]).grid(row=i+2, column=2, sticky="w")
-                Tk.Label(self.selected, text="Image", compound=Tk.RIGHT, image=self.parent.load_asset("assets/tabs/" + r.get("raid_image", "").replace(".png", "") + ".png", (20, 20))).grid(row=i+2, column=3, sticky="w")
-                self.raid_text_var.append(Tk.StringVar())
-                self.raid_text_var[-1].set(r.get("raid_image", ""))
-                self.raid_text_var[-1].trace("w", lambda name, index, mode, sv=self.raid_text_var[-1], idx=index, i=i: self.edit_entry(sv, i, idx, "raid_image"))
-                ttk.Entry(self.selected, textvariable=self.raid_text_var[-1]).grid(row=i+2, column=4, sticky="w")
-                Tk.Label(self.selected, text="Loots").grid(row=i+2, column=5, sticky="w")
-                self.raid_text_var.append(Tk.StringVar())
-                self.raid_text_var[-1].set("/".join(r.get("loot", "")))
-                self.raid_text_var[-1].trace("w", lambda name, index, mode, sv=self.raid_text_var[-1], idx=index, i=i: self.edit_entry(sv, i, idx, "loot"))
-                ttk.Entry(self.selected, textvariable=self.raid_text_var[-1]).grid(row=i+2, column=6, sticky="w")
-                self.parent.make_button(self.selected, "", lambda index=index, i=i: self.insert_raid(index, i), i+2, 7, 1, "w", ("others", "add", (20, 20)))
-                self.parent.make_button(self.selected, "", lambda index=index, i=i: self.move_raid_to(index, i), i+2, 8, 1, "w", ("others", "move", (20, 20)))
-                if i > 0: self.parent.make_button(self.selected, "", lambda index=index, i=i: self.move_raid(index, i, -1), i+2, 9, 1, "w", ("others", "up", (20, 20)))
-                if i < len(self.layout[index]["raids"]) - 1: self.parent.make_button(self.selected, "", lambda index=index, i=i: self.move_raid(index, i, 1), i+2, 10, 1, "w", ("others", "down", (20, 20)))
-                self.parent.make_button(self.selected, "", lambda index=index, i=i: self.delete_raid(index, i), i+2, 11, 1, "w", ("others", "del", (20, 20)))
+                if i == len(self.raid_container): # create fresh line and store in raid_container
+                    self.raid_container.append([])
+                    label = Tk.Label(self.selected, text="#"+str(i+1))
+                    label.grid(row=i+2, column=0, sticky="w")
+                    self.raid_container[-1].append(label)
+                    label = Tk.Label(self.selected, text="Raid ID Name")
+                    label.grid(row=i+2, column=1, sticky="w")
+                    self.raid_container[-1].append(label)
+                    self.raid_text_var.append(Tk.StringVar())
+                    self.raid_text_var[-1].set(r.get("text", ""))
+                    self.raid_text_var[-1].trace_add("write", lambda name, index, mode, sv=self.raid_text_var[-1], idx=index, i=i: self.edit_entry(sv, i, idx, "text"))
+                    entry = ttk.Entry(self.selected, textvariable=self.raid_text_var[-1])
+                    entry.grid(row=i+2, column=2, sticky="w")
+                    self.raid_container[-1].append(entry)
+                    label = Tk.Label(self.selected, text="Image", compound=Tk.RIGHT, image=self.parent.load_asset("assets/tabs/" + r.get("raid_image", "").replace(".png", "") + ".png", (20, 20)))
+                    label.grid(row=i+2, column=3, sticky="w")
+                    self.raid_container[-1].append(label)
+                    self.raid_text_var.append(Tk.StringVar())
+                    self.raid_text_var[-1].set(r.get("raid_image", ""))
+                    self.raid_text_var[-1].trace_add("write", lambda name, index, mode, sv=self.raid_text_var[-1], idx=index, i=i: self.edit_entry(sv, i, idx, "raid_image"))
+                    entry = ttk.Entry(self.selected, textvariable=self.raid_text_var[-1])
+                    entry.grid(row=i+2, column=4, sticky="w")
+                    self.raid_container[-1].append(entry)
+                    label = Tk.Label(self.selected, text="Loots")
+                    label.grid(row=i+2, column=5, sticky="w")
+                    self.raid_container[-1].append(label)
+                    self.raid_text_var.append(Tk.StringVar())
+                    self.raid_text_var[-1].set("/".join(r.get("loot", "")))
+                    self.raid_text_var[-1].trace_add("write", lambda name, index, mode, sv=self.raid_text_var[-1], idx=index, i=i: self.edit_entry(sv, i, idx, "loot"))
+                    entry = ttk.Entry(self.selected, textvariable=self.raid_text_var[-1])
+                    entry.grid(row=i+2, column=6, sticky="w")
+                    self.raid_container[-1].append(entry)
+                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.insert_raid(index, i), i+2, 7, 1, "w", ("others", "add", (20, 20))))
+                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.move_raid_to(index, i), i+2, 8, 1, "w", ("others", "move", (20, 20))))
+                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.move_raid(index, i, -1), i+2, 9, 1, "w", ("others", "up", (20, 20))))
+                    if i == 0:  self.raid_container[-1][-1].grid_forget()
+                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.move_raid(index, i, 1), i+2, 10, 1, "w", ("others", "down", (20, 20))))
+                    if i == len(self.layout[index]["raids"]) - 1:  self.raid_container[-1][-1].grid_forget()
+                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.delete_raid(index, i), i+2, 11, 1, "w", ("others", "del", (20, 20))))
+                else:
+                    self.raid_text_var[i*3].trace_remove("write", self.raid_text_var[i*3].trace_info()[0][1])
+                    self.raid_text_var[i*3].set(r.get("text", ""))
+                    self.raid_text_var[i*3].trace_add("write", lambda name, index, mode, sv=self.raid_text_var[i*3], idx=index, i=i: self.edit_entry(sv, i, idx, "text"))
+                    self.raid_container[i][3].config(image=self.parent.load_asset("assets/tabs/" + r.get("raid_image", "").replace(".png", "") + ".png", (20, 20)))
+                    self.raid_text_var[i*3+1].trace_remove("write", self.raid_text_var[i*3+1].trace_info()[0][1])
+                    self.raid_text_var[i*3+1].set(r.get("raid_image", ""))
+                    self.raid_text_var[i*3+1].trace_add("write", lambda name, index, mode, sv=self.raid_text_var[i*3+1], idx=index, i=i: self.edit_entry(sv, i, idx, "raid_image"))
+                    self.raid_text_var[i*3+2].trace_remove("write", self.raid_text_var[i*3+2].trace_info()[0][1])
+                    self.raid_text_var[i*3+2].set("/".join(r.get("loot", "")))
+                    self.raid_text_var[i*3+2].trace_add("write", lambda name, index, mode, sv=self.raid_text_var[i*3+2], idx=index, i=i: self.edit_entry(sv, i, idx, "loot"))
+                    try:
+                        if i == 0: self.raid_container[i][9].grid_forget()
+                        else: self.raid_container[i][9].grid(row=i+2, column=9, columnspan=1)
+                    except:
+                        pass
+                    try:
+                        if i == len(self.layout[index]["raids"]) - 1: self.raid_container[i][10].grid_forget()
+                        else: self.raid_container[i][10].grid(row=i+2, column=10, columnspan=1)
+                    except:
+                        pass
         else:
-            Tk.Label(self.selected, text="No Tab Selected").grid(row=0, column=0, columnspan=6, sticky="w")
+            self.raid_header.config(text="No Tab Selected")
+            try: self.raid_header_add.grid_forget()
+            except: pass
             self.current_selected = None
 
     def save(self): # save to raids.json. Return True if success, False if failure/error detected.
