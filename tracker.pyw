@@ -790,6 +790,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self): # display the changelog
         changelog = [
+            "1.37 - Fixed the \"add tab between\" Editor buttons.",
             "1.36 - Optimized the Layout Editor performances. Fixed the save data warnings not being displayed.",
             "1.35 - Popup windows won't appear out of the screen on startup. Reworked the Popup button. 'assets/raids.json' will auto-update if unmodified. Reset button added to the Editor.",
             "1.34 - Main and Popup Windows now have a minimum size of 240x150 pixels.",
@@ -798,9 +799,7 @@ class Tracker(Tk.Tk):
             "1.31 - Added more Python version checks, at startup and when opening the Layout Editor.",
             "1.30 - Added the Data Importer and the 'Notification Bar' keyboard shortcut.",
             "1.29 - Added the Forest TTK Themes. Bug fix: Impossible to change the theme on a fresh save file.",
-            "1.28 - Added \"Credits\" and \"What's New?\" buttons.",
-            "1.27 - Made the app temporarly python 3.9-friendly. Added a python version check during automatic updates, to avoid accidental bricking.",
-            "1.26 - Added the \"Favorited\" button."
+            "1.28 - Added \"Credits\" and \"What's New?\" buttons."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
@@ -1163,7 +1162,7 @@ class Editor(Tk.Toplevel): # editor window
                 entry.grid(row=i+1, column=4, sticky="w")
                 self.tab_container[-1].append(entry)
                 self.tab_container[-1].append(self.parent.make_button(self.top_frame, "", lambda i=i: self.update_select(i), i+1, 5, 1, "w", ("others", "edit", (20, 20))))
-                self.tab_container[-1].append(self.parent.make_button(self.top_frame, "", lambda i=i: self.update_select(i), i+1, 6, 1, "w", ("others", "add", (20, 20))))
+                self.tab_container[-1].append(self.parent.make_button(self.top_frame, "", lambda i=i: self.insert_tab(i), i+1, 6, 1, "w", ("others", "add", (20, 20))))
                 self.tab_container[-1].append(self.parent.make_button(self.top_frame, "", lambda i=i: self.move_tab(i, -1), i+1, 7, 1, "w", ("others", "up", (20, 20))))
                 if i == 0: self.tab_container[-1][-1].grid_forget()
                 self.tab_container[-1].append(self.parent.make_button(self.top_frame, "", lambda i=i: self.move_tab(i, 1), i+1, 8, 1, "w", ("others", "down", (20, 20))))
