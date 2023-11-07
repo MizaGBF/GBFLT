@@ -322,9 +322,10 @@ class Tracker(Tk.Tk):
         for rname in self.raid_data: # check opened windows and save their positions
             if self.raid_data[rname][""][5] is not None:
                 memorized[rname] = [self.raid_data[rname][""][5].winfo_rootx(), self.raid_data[rname][""][5].winfo_rooty()] # save the positions
-        self.settings['memorized'] = memorized
-        self.modified = True
-        self.push_notif("Popup Layout has been saved.")
+        if len(memorized) > 0 and messagebox.askquestion(title="Memorize", message="Do you want to save the positions of currently opened Raid popups?\nYou'll then be able to open them anytime using the 'O' key.") == "yes":
+            self.settings['memorized'] = memorized
+            self.modified = True
+            self.push_notif("Popup Layout has been saved.")
 
     def key_open_memorized(self, ev : Tk.Event): # shortcut to load memorized popup positions
         opened = False
@@ -536,7 +537,7 @@ class Tracker(Tk.Tk):
                 if self.stats_window is not None: self.stats_window.update_data() # update stats window if open
 
     def reset(self, rname : str): # raid name
-        if Tk.messagebox.askquestion(title="Reset", message="Do you want to reset this tab?") == "yes": #ask for confirmation to avoid  accidental data reset
+        if messagebox.askquestion(title="Reset", message="Do you want to reset this tab?") == "yes": #ask for confirmation to avoid  accidental data reset
             if rname in self.raid_data:
                 self.last_tab = rname
                 for k in self.raid_data[rname]:
@@ -616,7 +617,7 @@ class Tracker(Tk.Tk):
             with urllib.request.urlopen("https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/manifest.json") as url:
                 data = json.loads(url.read().decode("utf-8"))
             if "version" in data and self.version != "0.0" and not self.cmpVer(self.version, data["version"]):
-                if Tk.messagebox.askquestion(title="Update", message="An update is available.\nCurrent version: {}\nNew Version: {}\nDo you want to download and install?\n- 'save.json' and 'assets/raids.json' (if modified) will be kept intact.\n- Other files will be overwritten.".format(self.version, data["version"])) == "yes":
+                if messagebox.askquestion(title="Update", message="An update is available.\nCurrent version: {}\nNew Version: {}\nDo you want to download and install?\n- 'save.json' and 'assets/raids.json' (if modified) will be kept intact.\n- Other files will be overwritten.".format(self.version, data["version"])) == "yes":
                     if self.check_python(data.get("python", "3.10")) is False:
                         if messagebox.askquestion("Outdated Python", "Your python version is v{}.{}.\nAt least Python v{} is recommended.\nUninstall python and install a more recent version.\nOpen the download page?".format(sys.version_info.major, sys.version_info.minor, data.get("python", "3.10"))) == "yes":
                             webbrowser.open("https://www.python.org/downloads/", new=2, autoraise=True)
@@ -693,7 +694,7 @@ class Tracker(Tk.Tk):
                                                 if len(new_tab["raids"]) > 0:
                                                     old.append(new_tab)
                                                     changes += "Adding Tab '{}'\n".format(tn["text"])
-                                        if changes != "" and Tk.messagebox.askquestion(title="Update", message="Some differences have been detected between your 'assets/raids.json' and the one from the latest version:\n" + changes + "\nDo you want to apply those differences to your 'assets/raids.json'?") == "yes":
+                                        if changes != "" and messagebox.askquestion(title="Update", message="Some differences have been detected between your 'assets/raids.json' and the one from the latest version:\n" + changes + "\nDo you want to apply those differences to your 'assets/raids.json'?") == "yes":
                                             try:
                                                 json.dumps(str(old)) # check for validity
                                                 with open('assets/raids.json', mode='w', encoding='utf-8') as f:
@@ -704,7 +705,7 @@ class Tracker(Tk.Tk):
                                                 messagebox.showerror("Error", "Couldn't update 'assets/raids.json', it has been left untouched:\n" + str(ee))
                                     break
                         except:
-                            if Tk.messagebox.askquestion(title="Update", message="An error occured while attempting to detect differences between your 'assets/raids.json' and the one from the latest version.\nDo you want to replace your 'assets/raids.json' with the new one?") == "yes":
+                            if messagebox.askquestion(title="Update", message="An error occured while attempting to detect differences between your 'assets/raids.json' and the one from the latest version.\nDo you want to replace your 'assets/raids.json' with the new one?") == "yes":
                                 for file in file_list:
                                     if file.endswith("raids.json"):
                                         new = json.loads(zip_ref.read(file).decode('utf-8'))
@@ -844,7 +845,8 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self): # display the changelog
         changelog = [
-            "1.39 - Added keyboard shortcuts to memorize and open Raid popups, and another to close all Raid popups.",
+            "1.40 - The shortcut key 'M' now asks for confirmation. 'M', 'O' anc 'C' are also usable when a Raid popup is the focus.",
+            "1.39 - Added shortcuts to memorize ('M') and open ('O') Raid popups, and another to close ('C') all Raid popups. Shortcut keys 'T', 'S', 'L' and 'N' are now usable when a Raid popup is the focus.",
             "1.38 - Added welcome notifications and a Preview button in the Editor.",
             "1.37 - Fixed the \"add tab between\" Editor buttons.",
             "1.36 - Optimized the Layout Editor performances. Fixed the save data warnings not being displayed.",
@@ -852,8 +854,7 @@ class Tracker(Tk.Tk):
             "1.34 - Main and Popup Windows now have a minimum size of 240x150 pixels.",
             "1.33 - Added Multi-Window support.",
             "1.32 - The Layout Editor is now part of the Tracker itself.",
-            "1.31 - Added more Python version checks, at startup and when opening the Layout Editor.",
-            "1.30 - Added the Data Importer and the 'Notification Bar' keyboard shortcut."
+            "1.31 - Added more Python version checks, at startup and when opening the Layout Editor."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
@@ -976,7 +977,7 @@ class DetachedRaid(Tk.Toplevel): # detached raid window
         for k in self.parent.raid_data[self.rname]: # mirror values
             self.data[k][0] = self.parent.raid_data[self.rname][k][0]
         self.parent.update_label_sub(self.rname, self.data) # update the window
-        self.parent.set_general_binding(self, ["t", "s", "l", "n"])
+        self.parent.set_general_binding(self, ["t", "s", "l", "n", "m", "o", "c"])
         if position is not None: # set position if given
             self.setPosition(position[0], position[1])
         self.parent.modified = True
@@ -1085,13 +1086,13 @@ class Editor(Tk.Toplevel): # editor window
             self.attributes('-topmost', True)
 
     def reset(self): # reset layout
-        if Tk.messagebox.askquestion(title="Editor - Reset", message="Are you sure that you want to reset the layout?") == "yes":
+        if messagebox.askquestion(title="Editor - Reset", message="Are you sure that you want to reset the layout?") == "yes":
             self.layout = json.loads(self.parent.DEFAULT_LAYOUT.replace("'", '"'))
             self.current_selected = None
             self.update_layout()
 
     def close(self): # close function
-        if self.layout_string != str(self.layout) and Tk.messagebox.askquestion(title="Editor - Warning", message="You have unsaved changes. Attempt to save now?") == "yes": # ask for save if unsaved changes
+        if self.layout_string != str(self.layout) and messagebox.askquestion(title="Editor - Warning", message="You have unsaved changes. Attempt to save now?") == "yes": # ask for save if unsaved changes
             if not self.save():
                 return
         self.parent.editor_window = None
@@ -1130,7 +1131,7 @@ class Editor(Tk.Toplevel): # editor window
         self.update_layout(ti)
 
     def delete_tab(self, i): # delete tab at given position i
-        if Tk.messagebox.askquestion(title="Editor -Delete Tab", message="Are you sure you want to delete Tab #{}?\nAll of its content will be lost.".format(i+1)) == "yes":
+        if messagebox.askquestion(title="Editor -Delete Tab", message="Are you sure you want to delete Tab #{}?\nAll of its content will be lost.".format(i+1)) == "yes":
             del self.layout[i]
             # check if bottom frame is enabled and calculate the new index
             if self.current_selected is None or self.current_selected == i:
@@ -1166,7 +1167,7 @@ class Editor(Tk.Toplevel): # editor window
         self.update_select(index)
 
     def delete_raid(self, index, i): # delete a raid at position i in tab index
-        if Tk.messagebox.askquestion(title="Editor -Delete Raid", message="Are you sure you want to delete Raid #{}?\nIts content will be lost.".format(i+1)) == "yes":
+        if messagebox.askquestion(title="Editor -Delete Raid", message="Are you sure you want to delete Raid #{}?\nIts content will be lost.".format(i+1)) == "yes":
             del self.layout[index]["raids"][i]
             # update the bottom layout
             self.update_select(index)
