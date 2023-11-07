@@ -1,7 +1,6 @@
 import tkinter as Tk
 import tkinter.font as tkFont
 from tkinter import ttk, PhotoImage, messagebox, filedialog, simpledialog
-import time
 import json
 import urllib.request
 import webbrowser
@@ -14,6 +13,7 @@ import os
 import copy
 from typing import Callable, Optional
 from datetime import datetime
+import calendar
 import traceback
 
 class Tracker(Tk.Tk):
@@ -22,7 +22,6 @@ class Tracker(Tk.Tk):
     FORBIDDEN = ["version", "last", "settings", "history", "favorites"] # forbidden raid name list
     THEME = ["light", "dark", "forest-light", "forest-dark"] # existing themes
     DEFAULT_LAYOUT = "[{'tab_image': 'bar', 'text': 'Bars', 'raids': [{'raid_image': 'bhl', 'text': 'BHL', 'loot': ['blue', 'ring3', 'bar']}, {'raid_image': 'akasha', 'text': 'Akasha', 'loot': ['blue', 'ring3', 'bar']}, {'raid_image': 'gohl', 'text': 'Grande', 'loot': ['blue', 'ring3', 'bar']}]}, {'tab_image': 'sand', 'text': 'Revans', 'raids': [{'raid_image': 'mugen', 'text': 'Mugen', 'loot': ['blue', 'wpn_mugen', 'sand']}, {'raid_image': 'diaspora', 'text': 'Diaspora', 'loot': ['blue', 'wpn_diaspora', 'sand']}, {'raid_image': 'siegfried', 'text': 'Siegfried', 'loot': ['blue', 'wpn_siegfried', 'sand']}, {'raid_image': 'siete', 'text': 'Siete', 'loot': ['blue', 'wpn_siete', 'sand']}, {'raid_image': 'cosmos', 'text': 'Cosmos', 'loot': ['blue', 'wpn_cosmos', 'sand']}, {'raid_image': 'agastia', 'text': 'Agastia', 'loot': ['blue', 'wpn_agastia', 'sand']}]}, {'tab_image': 'sand', 'text': 'Sands', 'raids': [{'raid_image': 'ennead', 'text': 'Enneads', 'loot': ['sand']}, {'raid_image': '6d', 'text': '6D', 'loot': ['fireearring', 'sand']}, {'raid_image': 'subaha', 'text': 'SuBaha', 'loot': ['sand']}, {'raid_image': 'hexa', 'text': 'Hexa', 'loot': ['sand']}]}]"
-    NOTIF_THRESHOLD = 200 # frame before the notification is deleted
     def __init__(self):
         Tk.Tk.__init__(self,None)
         self.parent = None
@@ -121,9 +120,19 @@ class Tracker(Tk.Tk):
         for i in range(1, 13): self.bind('<F{}>'.format(i), self.key_select_fav)
         
         # notification
-        self.notification_counter = 0
         self.notification = Tk.Label(self, text="")
         if self.settings.get("show_notif", 0) == 1: self.notification.grid(row=1, column=0, sticky="w")
+        # welcome notification and easter eggs
+        now = datetime.now()
+        if now.day == calendar.monthrange(now.year, now.month)[1]: self.push_notif(["Immunity Lily blesses your rolls.", "GOLEM GET YE GONE!"][now.month%2]) # legfest (alternate the messages depending on the month)
+        elif now.day == 31 and now.month == 10: self.push_notif("Happy Halloween!")
+        elif now.day == 25 and now.month == 12: self.push_notif("Happy Christmas!")
+        elif now.day == 1 and now.month == 1: self.push_notif("Happy New Year!")
+        elif now.day == 14 and now.month == 2: self.push_notif("Happy Valentine!")
+        elif now.day == 10 and now.month == 3: self.push_notif("Another year on Granblue Fantasy...")
+        elif now.day == 1 and now.month == 4: self.push_notif("???")
+        elif now.day == 29 and now.month == 4: self.push_notif("Golden Week is starting!")
+        else: self.push_notif("May luck be with you.") # random welcome message
         
         # end
         if self.check_python(self.python) is False:
@@ -144,6 +153,7 @@ class Tracker(Tk.Tk):
         elif self.settings.get("check_update", 0) == 1:
             self.check_new_update()
         self.last_savedata_string = str(self.get_save_data()) # get current state of the save as a string
+        self.after(60000, self.save_task)
 
     def set_tab_content(self, parent : Tk.Tk, layout : dict, container : dict, is_main_window : bool):
         rn = layout["text"]
@@ -335,20 +345,14 @@ class Tracker(Tk.Tk):
         except:
             pass
 
-    def run(self): # main loop
-        count = 0
-        while self.apprunning:
-            self.update()
-            time.sleep(0.02)
-            count += 1
-            if count % 3000 == 0:
-                self.save()
-            self.notification_counter += 1
-            if self.notification_counter == self.NOTIF_THRESHOLD: # delete notification at threshold
-                try: self.notification.config(text="")
-                except: pass
-            elif self.notification_counter > self.NOTIF_THRESHOLD:
-                self.notification_counter -= 1 # to not rish the value becoming super big
+    def save_task(self): # run alongside the loop : save and then run again in 60s
+        self.save()
+        if self.apprunning:
+            self.after(60000, self.save_task)
+
+    def clean_notif_task(self): # run alongside the loop: clean the notification bar
+        try: self.notification.config(text="")
+        except: pass
 
     def close(self): # called when we close the window
         self.apprunning = False
@@ -390,7 +394,9 @@ class Tracker(Tk.Tk):
             self.attributes('-topmost', True)
             if self.stats_window is not None: self.stats_window.attributes('-topmost', True)
             if self.import_window is not None: self.import_window.attributes('-topmost', True)
-            if self.editor_window is not None: self.editor_window.attributes('-topmost', True)
+            if self.editor_window is not None:
+                self.editor_window.attributes('-topmost', True)
+                if self.editor_window.preview is not None: self.editor_window.preview.attributes('-topmost', True)
             for rname in self.raid_data:
                 if self.raid_data[rname][""][5] is not None:
                     self.raid_data[rname][""][5].attributes('-topmost', True)
@@ -399,7 +405,9 @@ class Tracker(Tk.Tk):
             self.attributes('-topmost', False)
             if self.stats_window is not None: self.stats_window.attributes('-topmost', False)
             if self.import_window is not None: self.import_window.attributes('-topmost', False)
-            if self.editor_window is not None: self.editor_window.attributes('-topmost', False)
+            if self.editor_window is not None:
+                self.editor_window.attributes('-topmost', False)
+                if self.editor_window.preview is not None: self.editor_window.preview.attributes('-topmost', False)
             for rname in self.raid_data:
                 if self.raid_data[rname][""][5] is not None:
                     self.raid_data[rname][""][5].attributes('-topmost', False)
@@ -416,7 +424,7 @@ class Tracker(Tk.Tk):
 
     def push_notif(self, text : str): # edit the notification label and reset the counter
         self.notification.config(text=text)
-        self.notification_counter = 0
+        self.after(4000, self.clean_notif_task) # delete after 4s
 
     def toggle_theme(self): # toggle the theme
         try:
@@ -790,6 +798,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self): # display the changelog
         changelog = [
+            "1.38 - Added welcome notifications and a Preview button in the Editor.",
             "1.37 - Fixed the \"add tab between\" Editor buttons.",
             "1.36 - Optimized the Layout Editor performances. Fixed the save data warnings not being displayed.",
             "1.35 - Popup windows won't appear out of the screen on startup. Reworked the Popup button. 'assets/raids.json' will auto-update if unmodified. Reset button added to the Editor.",
@@ -798,8 +807,7 @@ class Tracker(Tk.Tk):
             "1.32 - The Layout Editor is now part of the Tracker itself.",
             "1.31 - Added more Python version checks, at startup and when opening the Layout Editor.",
             "1.30 - Added the Data Importer and the 'Notification Bar' keyboard shortcut.",
-            "1.29 - Added the Forest TTK Themes. Bug fix: Impossible to change the theme on a fresh save file.",
-            "1.28 - Added \"Credits\" and \"What's New?\" buttons."
+            "1.29 - Added the Forest TTK Themes. Bug fix: Impossible to change the theme on a fresh save file."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
@@ -1022,6 +1030,7 @@ class Editor(Tk.Toplevel): # editor window
         self.raid_header_add.grid_forget()
         self.current_selected = None # id of the current selected tab
         self.update_layout() # first update of the layout
+        self.preview = None # preview window
         if self.parent.settings.get("top_most", 0) == 1:
             self.attributes('-topmost', True)
 
@@ -1036,6 +1045,7 @@ class Editor(Tk.Toplevel): # editor window
             if not self.save():
                 return
         self.parent.editor_window = None
+        if self.preview is not None: self.preview.close()
         self.destroy()
 
     def load_raids(self): # load raids.json
@@ -1229,19 +1239,20 @@ class Editor(Tk.Toplevel): # editor window
                     label = Tk.Label(self.selected, text="Loots")
                     label.grid(row=i+2, column=5, sticky="w")
                     self.raid_container[-1].append(label)
+                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.see_loot(index, i), i+2, 6, 1, "w", ("others", "see", (20, 20))))
                     self.raid_text_var.append(Tk.StringVar())
                     self.raid_text_var[-1].set("/".join(r.get("loot", "")))
                     self.raid_text_var[-1].trace_add("write", lambda name, index, mode, sv=self.raid_text_var[-1], idx=index, i=i: self.edit_entry(sv, i, idx, "loot"))
                     entry = ttk.Entry(self.selected, textvariable=self.raid_text_var[-1])
-                    entry.grid(row=i+2, column=6, sticky="w")
+                    entry.grid(row=i+2, column=7, sticky="w")
                     self.raid_container[-1].append(entry)
-                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.insert_raid(index, i), i+2, 7, 1, "w", ("others", "add", (20, 20))))
-                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.move_raid_to(index, i), i+2, 8, 1, "w", ("others", "move", (20, 20))))
-                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.move_raid(index, i, -1), i+2, 9, 1, "w", ("others", "up", (20, 20))))
+                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.insert_raid(index, i), i+2, 8, 1, "w", ("others", "add", (20, 20))))
+                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.move_raid_to(index, i), i+2, 9, 1, "w", ("others", "move", (20, 20))))
+                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.move_raid(index, i, -1), i+2, 10, 1, "w", ("others", "up", (20, 20))))
                     if i == 0:  self.raid_container[-1][-1].grid_forget()
-                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.move_raid(index, i, 1), i+2, 10, 1, "w", ("others", "down", (20, 20))))
+                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.move_raid(index, i, 1), i+2, 11, 1, "w", ("others", "down", (20, 20))))
                     if i == len(self.layout[index]["raids"]) - 1:  self.raid_container[-1][-1].grid_forget()
-                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.delete_raid(index, i), i+2, 11, 1, "w", ("others", "del", (20, 20))))
+                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.delete_raid(index, i), i+2, 12, 1, "w", ("others", "del", (20, 20))))
                 else:
                     self.raid_text_var[i*3].trace_remove("write", self.raid_text_var[i*3].trace_info()[0][1])
                     self.raid_text_var[i*3].set(r.get("text", ""))
@@ -1254,13 +1265,13 @@ class Editor(Tk.Toplevel): # editor window
                     self.raid_text_var[i*3+2].set("/".join(r.get("loot", "")))
                     self.raid_text_var[i*3+2].trace_add("write", lambda name, index, mode, sv=self.raid_text_var[i*3+2], idx=index, i=i: self.edit_entry(sv, i, idx, "loot"))
                     try:
-                        if i == 0: self.raid_container[i][9].grid_forget()
-                        else: self.raid_container[i][9].grid(row=i+2, column=9, columnspan=1)
+                        if i == 0: self.raid_container[i][10].grid_forget()
+                        else: self.raid_container[i][10].grid(row=i+2, column=10, columnspan=1)
                     except:
                         pass
                     try:
-                        if i == len(self.layout[index]["raids"]) - 1: self.raid_container[i][10].grid_forget()
-                        else: self.raid_container[i][10].grid(row=i+2, column=10, columnspan=1)
+                        if i == len(self.layout[index]["raids"]) - 1: self.raid_container[i][11].grid_forget()
+                        else: self.raid_container[i][11].grid(row=i+2, column=11, columnspan=1)
                     except:
                         pass
         else:
@@ -1268,6 +1279,10 @@ class Editor(Tk.Toplevel): # editor window
             try: self.raid_header_add.grid_forget()
             except: pass
             self.current_selected = None
+
+    def see_loot(self, index : str, i : int):
+        if self.preview is not None: self.preview.close()
+        self.preview = PreviewLoot(self, self.layout[index]["raids"][i].get("raid_image", ""), self.layout[index]["raids"][i].get("loot", ""))
 
     def save(self): # save to raids.json. Return True if success, False if failure/error detected.
         errors = self.parent.verify_layout(self.layout)
@@ -1285,5 +1300,55 @@ class Editor(Tk.Toplevel): # editor window
             messagebox.showerror("Editor -Error", "An error occured while saving:\n"+str(e))
             return False
 
+class PreviewLoot(Tk.Toplevel): # preview window
+    def __init__(self, parent : Tk.Tk, rname : str, loot : list):
+        # window
+        self.parent = parent
+        Tk.Toplevel.__init__(self,parent)
+        self.title("Preview")
+        self.resizable(width=False, height=False) # not resizable
+        self.minsize(240, 150)
+        self.iconbitmap('assets/icon.ico')
+        self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
+        self.parent.parent.make_button(self, "", None, 0, 0, 1, "w", ("buttons", rname, (50, 50)))
+        Tk.Label(self, text="0").grid(row=1, column=0)
+        Tk.Label(self, text="Total").grid(row=2, column=0)
+        chest = None
+        problems = []
+        for l in loot:
+            if l in self.parent.parent.CHESTS:
+                if chest is None:
+                    chest = l
+                    break
+        if chest is not None:
+            Tk.Label(self, text="Chest").grid(row=3, column=0)
+        llist = set()
+        for i, l in enumerate(loot):
+            if l == "":
+                problems.append("- Empty string in the loot list (Did you put one extra '/' by mistake?).")
+                continue
+            elif l in llist:
+                problems.append("- '{}' is present twice in the loot list (Remove the duplicate to fix it).".format(l))
+                continue
+            elif l in self.parent.parent.CHESTS and l != chest:
+                problems.append("- Multiple chests in the loot list : '{}' (Remove the unwanted chests).".format(l))
+                continue
+            self.parent.parent.make_button(self, "", None, 0, i+1, 1, "w", ("buttons", l, (50, 50)))
+            Tk.Label(self, text="0").grid(row=1, column=i+1)
+            Tk.Label(self, text="0%").grid(row=2, column=i+1)
+            if chest is not None and l != chest: Tk.Label(self, text="0%").grid(row=3, column=i+1)
+            llist.add(l)
+        if len(problems) > 0:
+            self.parent.parent.make_button(self, "", lambda problems=problems : self.show_problems(problems), 4, 0, 1, "we", ("others", "warning", (20, 20)))
+        if self.parent.parent.settings.get("top_most", 0) == 1:
+            self.attributes('-topmost', True)
+
+    def show_problems(self, problems):
+        messagebox.showerror("Warnings", "List of issues detected with this raid:\n"+"\n".join(problems))
+
+    def close(self): # called on close
+        self.parent.preview = None
+        self.destroy()
+
 if __name__ == "__main__": # entry point
-    Tracker().run()
+    Tracker().mainloop()

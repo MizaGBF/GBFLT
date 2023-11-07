@@ -74,6 +74,7 @@ Under the `settings` tab of the tracker, press the button `Layout Editor` to ope
 - In the bottom area, in a similar fashion, you edit a raid `Text` and `Image` values (the image must be a 20x20 pixels PNG file in the `assets/tabs` folder and another 50x50 PNG file in the`assets/buttons` folder).  
 - To edit the `Loots`, simply put the list of item images (each image must be a 50x50 pixels PNG file in the `assets/buttons` folder) separated by `/` characters. No duplicates allowed in a same list. Only one chest (`wood`, `silver`, `gold`, `red`, `blue`, `purple`) allowed too.  
 - All values are case-sensitive.  
+- You can use the 'eye' button near the loot list to check how the raid will look like. If there is a problem, a 'warning' button will be present in the preview. Press it to see the list of issues.  
   
 Once you're done, click on `Save changes to 'raids.json'` at the top. If errors occured, fix what you did wrong. If no errors occured, (re)start `tracker.pyw` to check how your changes look.  
 Contact me or open an issue if you find bugs.  
