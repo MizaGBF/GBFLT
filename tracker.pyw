@@ -658,7 +658,7 @@ class Tracker(Tk.Tk):
                     folders = set()
                     file_list = zip_ref.namelist()
                     for file in file_list:
-                        if ".git" in file: pass
+                        if ".git" in file: continue
                         folders.add("/".join(file.split('/')[1:-1]))
                     # make folders (if missing)
                     for path in folders:
@@ -666,7 +666,7 @@ class Tracker(Tk.Tk):
                         os.makedirs(os.path.dirname(path if path.endswith("/") else path+"/"), exist_ok=True)
                     # write files
                     for file in file_list:
-                        if ".git" in file: pass
+                        if ".git" in file: continue
                         if file.split("/")[-1] in ["raids.json", "save.json"] or file.endswith("/"): continue
                         path = "/".join(file.split('/')[1:])
                         with open(path, mode="wb") as f:
