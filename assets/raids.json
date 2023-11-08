@@ -42,6 +42,7 @@
                 "loot": [
                     "blue",
                     "wpn_mugen",
+                    "wpn_mugen2",
                     "sand"
                 ]
             },
@@ -51,6 +52,7 @@
                 "loot": [
                     "blue",
                     "wpn_diaspora",
+                    "wpn_diaspora2",
                     "sand"
                 ]
             },
@@ -60,6 +62,7 @@
                 "loot": [
                     "blue",
                     "wpn_siegfried",
+                    "wpn_siegfried2",
                     "sand"
                 ]
             },
@@ -69,6 +72,7 @@
                 "loot": [
                     "blue",
                     "wpn_siete",
+                    "wpn_siete2",
                     "sand"
                 ]
             },
@@ -78,6 +82,7 @@
                 "loot": [
                     "blue",
                     "wpn_cosmos",
+                    "wpn_cosmos2",
                     "sand"
                 ]
             },
@@ -87,6 +92,7 @@
                 "loot": [
                     "blue",
                     "wpn_agastia",
+                    "wpn_agastia2",
                     "sand"
                 ]
             }

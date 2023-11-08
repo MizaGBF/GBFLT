@@ -21,7 +21,7 @@ class Tracker(Tk.Tk):
     RARES = ["bar", "sand"] # rare item
     FORBIDDEN = ["version", "last", "settings", "history", "favorites"] # forbidden raid name list
     THEME = ["light", "dark", "forest-light", "forest-dark"] # existing themes
-    DEFAULT_LAYOUT = "[{'tab_image': 'bar', 'text': 'Bars', 'raids': [{'raid_image': 'bhl', 'text': 'BHL', 'loot': ['blue', 'ring3', 'bar']}, {'raid_image': 'akasha', 'text': 'Akasha', 'loot': ['blue', 'ring3', 'bar']}, {'raid_image': 'gohl', 'text': 'Grande', 'loot': ['blue', 'ring3', 'bar']}]}, {'tab_image': 'sand', 'text': 'Revans', 'raids': [{'raid_image': 'mugen', 'text': 'Mugen', 'loot': ['blue', 'wpn_mugen', 'sand']}, {'raid_image': 'diaspora', 'text': 'Diaspora', 'loot': ['blue', 'wpn_diaspora', 'sand']}, {'raid_image': 'siegfried', 'text': 'Siegfried', 'loot': ['blue', 'wpn_siegfried', 'sand']}, {'raid_image': 'siete', 'text': 'Siete', 'loot': ['blue', 'wpn_siete', 'sand']}, {'raid_image': 'cosmos', 'text': 'Cosmos', 'loot': ['blue', 'wpn_cosmos', 'sand']}, {'raid_image': 'agastia', 'text': 'Agastia', 'loot': ['blue', 'wpn_agastia', 'sand']}]}, {'tab_image': 'sand', 'text': 'Sands', 'raids': [{'raid_image': 'ennead', 'text': 'Enneads', 'loot': ['sand']}, {'raid_image': '6d', 'text': '6D', 'loot': ['fireearring', 'sand']}, {'raid_image': 'subaha', 'text': 'SuBaha', 'loot': ['sand']}, {'raid_image': 'hexa', 'text': 'Hexa', 'loot': ['sand']}]}]"
+    DEFAULT_LAYOUT = "[{'tab_image': 'bar', 'text': 'Bars', 'raids': [{'raid_image': 'bhl', 'text': 'BHL', 'loot': ['blue', 'ring3', 'bar']}, {'raid_image': 'akasha', 'text': 'Akasha', 'loot': ['blue', 'ring3', 'bar']}, {'raid_image': 'gohl', 'text': 'Grande', 'loot': ['blue', 'ring3', 'bar']}]}, {'tab_image': 'sand', 'text': 'Revans', 'raids': [{'raid_image': 'mugen', 'text': 'Mugen', 'loot': ['blue', 'wpn_mugen', 'wpn_mugen2', 'sand']}, {'raid_image': 'diaspora', 'text': 'Diaspora', 'loot': ['blue', 'wpn_diaspora', 'wpn_diaspora2', 'sand']}, {'raid_image': 'siegfried', 'text': 'Siegfried', 'loot': ['blue', 'wpn_siegfried', 'wpn_siegfried2', 'sand']}, {'raid_image': 'siete', 'text': 'Siete', 'loot': ['blue', 'wpn_siete', 'wpn_siete2', 'sand']}, {'raid_image': 'cosmos', 'text': 'Cosmos', 'loot': ['blue', 'wpn_cosmos', 'wpn_cosmos2', 'sand']}, {'raid_image': 'agastia', 'text': 'Agastia', 'loot': ['blue', 'wpn_agastia', 'wpn_agastia2', 'sand']}]}, {'tab_image': 'sand', 'text': 'Sands', 'raids': [{'raid_image': 'ennead', 'text': 'Enneads', 'loot': ['sand']}, {'raid_image': '6d', 'text': '6D', 'loot': ['fireearring', 'sand']}, {'raid_image': 'subaha', 'text': 'SuBaha', 'loot': ['sand']}, {'raid_image': 'hexa', 'text': 'Hexa', 'loot': ['sand']}]}]"
     def __init__(self):
         Tk.Tk.__init__(self,None)
         self.parent = None
@@ -845,6 +845,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self): # display the changelog
         changelog = [
+            "1.41 - Added the new Revans weapons. If you modified your 'raids.json', you have to add them manually.",
             "1.40 - The shortcut key 'M' now asks for confirmation. 'M', 'O' anc 'C' are also usable when a Raid popup is the focus.",
             "1.39 - Added shortcuts to memorize ('M') and open ('O') Raid popups, and another to close ('C') all Raid popups. Shortcut keys 'T', 'S', 'L' and 'N' are now usable when a Raid popup is the focus.",
             "1.38 - Added welcome notifications and a Preview button in the Editor.",
@@ -853,8 +854,7 @@ class Tracker(Tk.Tk):
             "1.35 - Popup windows won't appear out of the screen on startup. Reworked the Popup button. 'assets/raids.json' will auto-update if unmodified. Reset button added to the Editor.",
             "1.34 - Main and Popup Windows now have a minimum size of 240x150 pixels.",
             "1.33 - Added Multi-Window support.",
-            "1.32 - The Layout Editor is now part of the Tracker itself.",
-            "1.31 - Added more Python version checks, at startup and when opening the Layout Editor."
+            "1.32 - The Layout Editor is now part of the Tracker itself."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
