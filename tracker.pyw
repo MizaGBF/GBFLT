@@ -422,7 +422,7 @@ class Tracker(Tk.Tk):
         try:
             with open('assets/raids.json', mode='r', encoding='utf-8') as f:
                 data = json.load(f)
-            self.og_raidlayout = str(data) != self.DEFAULT_LAYOUT
+            self.og_raidlayout = (str(data) == self.DEFAULT_LAYOUT)
         except Exception as e:
             data = []
             errors = ["Error in raids.json: " + str(e)]
@@ -845,6 +845,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self): # display the changelog
         changelog = [
+            "1.42 - Fixed an issue in the auto-updater causing custom raids.json to be overwritten.",
             "1.41 - Added the new Revans weapons. If you modified your 'raids.json', you have to add them manually.",
             "1.40 - The shortcut key 'M' now asks for confirmation. 'M', 'O' anc 'C' are also usable when a Raid popup is the focus.",
             "1.39 - Added shortcuts to memorize ('M') and open ('O') Raid popups, and another to close ('C') all Raid popups. Shortcut keys 'T', 'S', 'L' and 'N' are now usable when a Raid popup is the focus.",
@@ -853,8 +854,7 @@ class Tracker(Tk.Tk):
             "1.36 - Optimized the Layout Editor performances. Fixed the save data warnings not being displayed.",
             "1.35 - Popup windows won't appear out of the screen on startup. Reworked the Popup button. 'assets/raids.json' will auto-update if unmodified. Reset button added to the Editor.",
             "1.34 - Main and Popup Windows now have a minimum size of 240x150 pixels.",
-            "1.33 - Added Multi-Window support.",
-            "1.32 - The Layout Editor is now part of the Tracker itself."
+            "1.33 - Added Multi-Window support."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
