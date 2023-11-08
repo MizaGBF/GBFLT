@@ -632,8 +632,26 @@ class Tracker(Tk.Tk):
 
     def auto_update(self):
         try:
+            # backup
+            try:
+                with open('assets/raids.json', mode='rb') as f:
+                    data = f.read()
+                with open('assets/raids-backup.json', mode='wb') as f:
+                    f.write(data)
+            except:
+                pass
+            try:
+                with open('save.json', mode='rb') as f:
+                    data = f.read()
+                with open('save-backup.json', mode='wb') as f:
+                    f.write(data)
+            except:
+                pass
+            return
+            # download latest
             with urllib.request.urlopen("https://github.com/MizaGBF/GBFLT/archive/refs/heads/main.zip") as url:
                 data = url.read()
+            # read
             with BytesIO(data) as zip_content:
                 with zipfile.ZipFile(zip_content, 'r') as zip_ref:
                     # list files
@@ -712,7 +730,7 @@ class Tracker(Tk.Tk):
                                         with open('assets/raids.json', mode='w', encoding='utf-8') as f:
                                             json.dump(new, f, indent=4, ensure_ascii=False)
                                         break
-            messagebox.showinfo("Update", "Update successful.\nThe application will now restart.")
+            messagebox.showinfo("Update", "Update successful.\nThe application will now restart.\nIf you need to, you'll find backups of 'save.json' and 'assets/raids.json' near them.")
             self.restart()
         except Exception as e:
             print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
@@ -845,6 +863,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self): # display the changelog
         changelog = [
+            "1.43 - 'save.json' and 'assets/raids.json' are now backed up before updating.",
             "1.42 - Fixed an issue in the auto-updater causing custom raids.json to be overwritten.",
             "1.41 - Added the new Revans weapons. If you modified your 'raids.json', you have to add them manually.",
             "1.40 - The shortcut key 'M' now asks for confirmation. 'M', 'O' anc 'C' are also usable when a Raid popup is the focus.",
@@ -853,8 +872,7 @@ class Tracker(Tk.Tk):
             "1.37 - Fixed the \"add tab between\" Editor buttons.",
             "1.36 - Optimized the Layout Editor performances. Fixed the save data warnings not being displayed.",
             "1.35 - Popup windows won't appear out of the screen on startup. Reworked the Popup button. 'assets/raids.json' will auto-update if unmodified. Reset button added to the Editor.",
-            "1.34 - Main and Popup Windows now have a minimum size of 240x150 pixels.",
-            "1.33 - Added Multi-Window support."
+            "1.34 - Main and Popup Windows now have a minimum size of 240x150 pixels."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
