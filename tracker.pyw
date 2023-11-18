@@ -25,7 +25,6 @@ class Tracker(Tk.Tk):
     def __init__(self):
         Tk.Tk.__init__(self,None)
         self.parent = None
-        self.apprunning = True
         self.version = "0.0"
         self.python = "3.10"
         self.og_raidlayout = True # set to False if the user has modified raids.json
@@ -391,15 +390,13 @@ class Tracker(Tk.Tk):
 
     def save_task(self): # run alongside the loop : save and then run again in 60s
         self.save()
-        if self.apprunning:
-            self.after(60000, self.save_task)
+        self.after(60000, self.save_task)
 
     def clean_notif_task(self): # run alongside the loop: clean the notification bar
         try: self.notification.config(text="")
         except: pass
 
     def close(self): # called when we close the window
-        self.apprunning = False
         if "detached" not in self.settings: self.settings['detached'] = {}
         for rname in self.raid_data: # check opened windows and save their positions
             if self.raid_data[rname][""][5] is not None:
@@ -865,6 +862,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self): # display the changelog
         changelog = [
+            "1.44 - Fixed the various raid buttons of the Layout Editor being binded to the wrong raid in some cases.",
             "1.43 - 'save.json' and 'assets/raids.json' are now backed up before updating.",
             "1.42 - Fixed an issue in the auto-updater causing custom raids.json to be overwritten.",
             "1.41 - Added the new Revans weapons. If you modified your 'raids.json', you have to add them manually.",
@@ -873,8 +871,7 @@ class Tracker(Tk.Tk):
             "1.38 - Added welcome notifications and a Preview button in the Editor.",
             "1.37 - Fixed the \"add tab between\" Editor buttons.",
             "1.36 - Optimized the Layout Editor performances. Fixed the save data warnings not being displayed.",
-            "1.35 - Popup windows won't appear out of the screen on startup. Reworked the Popup button. 'assets/raids.json' will auto-update if unmodified. Reset button added to the Editor.",
-            "1.34 - Main and Popup Windows now have a minimum size of 240x150 pixels."
+            "1.35 - Popup windows won't appear out of the screen on startup. Reworked the Popup button. 'assets/raids.json' will auto-update if unmodified. Reset button added to the Editor."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
@@ -1332,9 +1329,15 @@ class Editor(Tk.Toplevel): # editor window
                     self.raid_text_var[i*3+1].trace_remove("write", self.raid_text_var[i*3+1].trace_info()[0][1])
                     self.raid_text_var[i*3+1].set(r.get("raid_image", ""))
                     self.raid_text_var[i*3+1].trace_add("write", lambda name, index, mode, sv=self.raid_text_var[i*3+1], idx=index, i=i: self.edit_entry(sv, i, idx, "raid_image"))
+                    self.raid_container[i][6].config(command=lambda index=index, i=i: self.see_loot(index, i))
                     self.raid_text_var[i*3+2].trace_remove("write", self.raid_text_var[i*3+2].trace_info()[0][1])
                     self.raid_text_var[i*3+2].set("/".join(r.get("loot", "")))
                     self.raid_text_var[i*3+2].trace_add("write", lambda name, index, mode, sv=self.raid_text_var[i*3+2], idx=index, i=i: self.edit_entry(sv, i, idx, "loot"))
+                    self.raid_container[i][8].config(command=lambda index=index, i=i: self.insert_raid(index, i))
+                    self.raid_container[i][9].config(command=lambda index=index, i=i: self.move_raid_to(index, i))
+                    self.raid_container[i][10].config(command=lambda index=index, i=i: self.move_raid(index, i, -1))
+                    self.raid_container[i][11].config(command=lambda index=index, i=i: self.move_raid(index, i, 1))
+                    self.raid_container[i][12].config(command=lambda index=index, i=i: self.delete_raid(index, i))
                     try:
                         if i == 0: self.raid_container[i][10].grid_forget()
                         else: self.raid_container[i][10].grid(row=i+2, column=10, columnspan=1)
