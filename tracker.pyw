@@ -111,6 +111,7 @@ class Tracker(Tk.Tk):
         
         # notification
         self.notification = Tk.Label(self, text="")
+        self.notification_after = None # after callback
         if self.settings.get("show_notif", 1) == 1: self.notification.grid(row=1, column=0, sticky="w")
         # welcome notification and easter eggs
         now = datetime.now()
@@ -466,7 +467,8 @@ class Tracker(Tk.Tk):
 
     def push_notif(self, text : str): # edit the notification label and reset the counter
         self.notification.config(text=text)
-        self.after(4000, self.clean_notif_task) # delete after 4s
+        if self.notification_after is not None: self.after_cancel(self.notification_after)
+        self.notification_after = self.after(4000, self.clean_notif_task) # delete after 4s
 
     def toggle_theme(self): # toggle the theme
         try:
@@ -862,6 +864,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self): # display the changelog
         changelog = [
+            "1.45 - Fixed a bug causing notifications to be removed too early.",
             "1.44 - Fixed the various raid buttons of the Layout Editor being binded to the wrong raid in some cases.",
             "1.43 - 'save.json' and 'assets/raids.json' are now backed up before updating.",
             "1.42 - Fixed an issue in the auto-updater causing custom raids.json to be overwritten.",
@@ -870,8 +873,7 @@ class Tracker(Tk.Tk):
             "1.39 - Added shortcuts to memorize ('M') and open ('O') Raid popups, and another to close ('C') all Raid popups. Shortcut keys 'T', 'S', 'L' and 'N' are now usable when a Raid popup is the focus.",
             "1.38 - Added welcome notifications and a Preview button in the Editor.",
             "1.37 - Fixed the \"add tab between\" Editor buttons.",
-            "1.36 - Optimized the Layout Editor performances. Fixed the save data warnings not being displayed.",
-            "1.35 - Popup windows won't appear out of the screen on startup. Reworked the Popup button. 'assets/raids.json' will auto-update if unmodified. Reset button added to the Editor."
+            "1.36 - Optimized the Layout Editor performances. Fixed the save data warnings not being displayed."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
