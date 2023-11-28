@@ -55,12 +55,12 @@ class Tracker(Tk.Tk):
         errors += self.verify_layout(layout)
         
         self.tab_tree = {} # used to memorize the tab structure, to set the active tab after loading
-        self.top_tab = ttk.Notebook(self)
+        self.top_tab = ttk.Notebook(self, takefocus=False)
         for ti, t in enumerate(layout): # top tabs
             tab = ttk.Frame(self.top_tab)
             self.top_tab.add(tab, text=t.get("text", ""))
             self.top_tab.tab(tab, image=self.load_asset("assets/tabs/" + t.get("tab_image", "").replace(".png", "") + ".png", (20, 20)), compound=Tk.LEFT)
-            raid_tabs = ttk.Notebook(tab)
+            raid_tabs = ttk.Notebook(tab, takefocus=False)
             for c, r in enumerate(t.get("raids", [])): # raid tabs
                 if "text" not in r or  r["text"] in self.raid_data:
                     continue
@@ -864,6 +864,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self): # display the changelog
         changelog = [
+            "1.46 - Fixed keyboard navigation not working on tabs after clicking a tab.",
             "1.45 - Fixed a bug causing notifications to be removed too early.",
             "1.44 - Fixed the various raid buttons of the Layout Editor being binded to the wrong raid in some cases.",
             "1.43 - 'save.json' and 'assets/raids.json' are now backed up before updating.",
@@ -872,8 +873,7 @@ class Tracker(Tk.Tk):
             "1.40 - The shortcut key 'M' now asks for confirmation. 'M', 'O' anc 'C' are also usable when a Raid popup is the focus.",
             "1.39 - Added shortcuts to memorize ('M') and open ('O') Raid popups, and another to close ('C') all Raid popups. Shortcut keys 'T', 'S', 'L' and 'N' are now usable when a Raid popup is the focus.",
             "1.38 - Added welcome notifications and a Preview button in the Editor.",
-            "1.37 - Fixed the \"add tab between\" Editor buttons.",
-            "1.36 - Optimized the Layout Editor performances. Fixed the save data warnings not being displayed."
+            "1.37 - Fixed the \"add tab between\" Editor buttons."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
