@@ -18,6 +18,14 @@
 ### Installation  
 * You only need [Python 3](https://www.python.org/downloads/) (version 3.10 or higher) installed.  
 * New to Github? Click the Green `Code` button at the top of this page, then "Download ZIP" to download this repository.  
+* Once downloaded, right click on the `.zip` file and extract the content. You can then delete the `.zip` file.  
+* Now, go inside the newly created folder and double-click on `tracker.pyw` to see if it works. If it doesn't, check the next section.
+  
+### Troubleshooting  
+If you downloaded this application for the first time and it doesn't run, check the following:
+1. Make sure you did extract the `.zip` properly and that you're not inside currently.
+2. Did your operating system ask you to pick an application to open the file? If yes and you picked a Python with a *rocket* on its icon: It's not Python but its launcher. On Windows: Click on "More applications" then scroll down to "Search an application on this computer". Navigate to where you installed Python (probably somewhere in your `C:\` folder) and go inside. You should see a few files, including one named `pythonw.exe` (take note of the **w**). Pick this one and it should start. Make sure to make it the default application for this file so you don't have to repeat the steps above.  
+3. If it still doesn't start, go into the `assets` folder and try run `troubleshooting.pyw`. If it doesn't run too, something is very wrong with your installation (if you have multiple Python versions installed including an old one, it might be the problem). If it runs, it should tell you what's wrong.  
   
 ### Usage  
 * Simply double-click on `tracker.pyw`, assuming Python is installed correctly. If nothing happens, see the `Issues` section below.  
