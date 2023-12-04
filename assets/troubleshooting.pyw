@@ -4,7 +4,6 @@ import json
 
 err_report = ""
 try:
-    raise Exception()
     with open("manifest.json", mode="r", encoding="utf-8") as f:
         data = json.load(f)
         pver = data.get("python", "3.10").split(".")
@@ -15,7 +14,6 @@ except Exception as e:
     pver = ["3", "10"]
 
 try:
-    raise Exception()
     with open("raids.json", mode="r", encoding="utf-8") as f:
         data = json.load(f)
     raid_check = True
