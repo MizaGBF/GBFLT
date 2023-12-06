@@ -872,6 +872,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self): # display the changelog
         changelog = [
+            "1.48 - The statistics window is now more detailed.",
             "1.47 - Raid tabs size is reduced if more than six raids are present in the same category.",
             "1.46 - Fixed keyboard navigation not working on tabs after clicking a tab.",
             "1.45 - Fixed a bug causing notifications to be removed too early.",
@@ -880,8 +881,7 @@ class Tracker(Tk.Tk):
             "1.42 - Fixed an issue in the auto-updater causing custom raids.json to be overwritten.",
             "1.41 - Added the new Revans weapons. If you modified your 'raids.json', you have to add them manually.",
             "1.40 - The shortcut key 'M' now asks for confirmation. 'M', 'O' anc 'C' are also usable when a Raid popup is the focus.",
-            "1.39 - Added shortcuts to memorize ('M') and open ('O') Raid popups, and another to close ('C') all Raid popups. Shortcut keys 'T', 'S', 'L' and 'N' are now usable when a Raid popup is the focus.",
-            "1.38 - Added welcome notifications and a Preview button in the Editor."
+            "1.39 - Added shortcuts to memorize ('M') and open ('O') Raid popups, and another to close ('C') all Raid popups. Shortcut keys 'T', 'S', 'L' and 'N' are now usable when a Raid popup is the focus."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
@@ -1018,9 +1018,10 @@ class DetachedRaid(Tk.Toplevel): # detached raid window
         self.destroy()
 
 class StatScreen(Tk.Toplevel): # stats window
-    WIDTH=4
-    TEXT_WIDTH=8
-    BOLD_FONT_MOD=2
+    ITEM_COLUMN = 5
+    TEXT_WIDTH = 5
+    BOLD_FONT_MOD = 2
+    RAID_TOP = 10
     def __init__(self, parent : Tk.Tk):
         # window
         self.parent = parent
@@ -1030,6 +1031,12 @@ class StatScreen(Tk.Toplevel): # stats window
         self.iconbitmap('assets/icon.ico')
         self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
         self.defaultfont = tkFont.nametofont('TkDefaultFont').actual() # used to make top label bold
+        # base ui
+        Tk.Label(self, text="Top cleared Raids", font=(self.defaultfont['family'], self.defaultfont['size']+self.BOLD_FONT_MOD, 'bold')).grid(row=0, column=0, columnspan=self.TEXT_WIDTH, sticky="w")
+        Tk.Button(self, text="?", command=self.help).grid(row=0, column=self.TEXT_WIDTH*2-1, columnspan=1, sticky="we")
+        self.frame = ttk.Frame(self)
+        self.frame.grid(row=1, column=0, columnspan=self.TEXT_WIDTH*2, sticky="we")
+        # start
         self.update_data()
         if self.parent.settings.get("top_most", 0) == 1:
             self.attributes('-topmost', True)
@@ -1037,16 +1044,23 @@ class StatScreen(Tk.Toplevel): # stats window
 
     def update_data(self): # update the data shown on the window
         # cleanup
-        for child in self.winfo_children(): # clean current elements
+        for child in self.frame.winfo_children(): # clean current elements
             child.destroy()
         # calculate stats
         data = {}
+        total = {}
         raid_counts = {}
         for n, r in self.parent.raid_data.items():
+            chest = self.parent.got_chest.get(n, None)
             for l, s in r.items():
                 data[l] = data.get(l, 0) + s[0]
                 if l == "" and s[0] > 0:
                     raid_counts[n] = s[0]
+                    total[''] = total.get('', 0) +s[0]
+                elif l == chest or chest is None:
+                    total[l] = total.get(l, 0) + r[''][0]
+                else:
+                    total[l] = total.get(l, 0) + r[chest][0]
         # sorted
         data = dict(sorted(data.items(), key=lambda item: item[1], reverse=True))
         raid_counts = dict(sorted(raid_counts.items(), key=lambda item: item[1], reverse=True))
@@ -1054,24 +1068,25 @@ class StatScreen(Tk.Toplevel): # stats window
         # raid ranking
         if len(raid_counts) > 0:
             count = 0
-            top = Tk.Label(self, text="Top cleared Raids", font=(self.defaultfont['family'], self.defaultfont['size']+self.BOLD_FONT_MOD, 'bold'))
-            top.grid(row=0, column=0, columnspan=self.TEXT_WIDTH, sticky="w")
             for n, s in raid_counts.items():
-                Tk.Label(self, text="#{:}: {:} - {:} times ({:.2f}%)".format(count+1, n, s, 100 * s / data.get("", 1)).replace(".00%", "%")).grid(row=count+1, column=0, columnspan=self.TEXT_WIDTH, sticky="w")
+                Tk.Label(self.frame, text="#{:}: {:} - {:} times ({:.2f}%)".format(count+1, n, s, 100 * s / data.get("", 1)).replace('0%', '%').replace('.0%', '%')).grid(row=count%5, column=count//5*self.TEXT_WIDTH, columnspan=self.TEXT_WIDTH, sticky="w")
                 count += 1
-                if count >= 3: break # stop at top 3
-        ttk.Separator(self, orient='horizontal').grid(row=4, column=0, columnspan=max(self.WIDTH*2, self.TEXT_WIDTH), sticky="we") # separator to make it pretty
+                if count >= self.RAID_TOP: break # stop
+        ttk.Separator(self.frame, orient='horizontal').grid(row=self.RAID_TOP, column=0, columnspan=max(self.ITEM_COLUMN*2, self.TEXT_WIDTH*2), sticky="we") # separator to make it pretty
         # item data
         count = 0
         for l, s in data.items():
             if s == 0: break
             asset = self.parent.load_asset("assets/buttons/" + (l.replace(".png", "") if l != "" else "unknown") + ".png", BIG_THUMBNAIL_SIZE)
-            Tk.Label(self, image=asset).grid(row=5 + count // self.WIDTH, column=count % self.WIDTH * 2)
-            Tk.Label(self, text=str(s)).grid(row=5 + count // self.WIDTH, column=count % self.WIDTH * 2 + 1)
+            Tk.Label(self.frame, image=asset).grid(row=self.RAID_TOP + 1 + count // self.ITEM_COLUMN, column=count % self.ITEM_COLUMN * 2)
+            Tk.Label(self.frame, text='{:}\n{:.2f}%'.format(s, 100*s/float(total[l])).replace('0%', '%').replace('.0%', '%') if l != "" else str(s)+"\nraids").grid(row=self.RAID_TOP + 1 + count // self.ITEM_COLUMN, column=count % self.ITEM_COLUMN * 2 + 1)
             count += 1
         # message if no data
         if count == 0:
-            Tk.Label(self, text="No Statistics available yet.                    \n\n\n", font=(self.defaultfont['family'], self.defaultfont['size']+self.BOLD_FONT_MOD, 'bold')).grid(row=5, column=0, columnspan=8)
+            Tk.Label(self.frame, text="No data available yet.\n\n", font=(self.defaultfont['family'], self.defaultfont['size']+self.BOLD_FONT_MOD, 'bold')).grid(row=self.RAID_TOP + 1, column=0, columnspan=self.TEXT_WIDTH, sticky="w")
+
+    def help(self):
+        messagebox.showinfo("Info", "Item percentages are calculated according to their corresponding total raid chests or raids (if no chest is present in said raid).")
 
     def close(self): # called on close
         self.parent.stats_window = None
@@ -1187,7 +1202,7 @@ class Editor(Tk.Toplevel): # editor window
     def insert_raid(self, index, i=None): # insert a raid at position i in tab index (if None, append)
         if "raids" not in self.layout[index]: self.layout[index]["raids"] = []
         if i is None:
-            self.layout[index]["raids"].append({"text":"My Raid", "raid_image":"unknown"})
+            self.layout[index]["raids"].append({"text":"My Raid", "raid_image":"bhl"})
         else:
             self.layout[index]["raids"].insert(i+1, {})
         # update the bottom layout
