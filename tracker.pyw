@@ -16,12 +16,18 @@ from datetime import datetime
 import calendar
 import traceback
 
+MIN_WIDTH = 240
+MIN_HEIGHT = 150
+SMALL_THUMBNAIL_SIZE = (20, 20)
+BIG_THUMBNAIL_SIZE = (50, 50)
+
 class Tracker(Tk.Tk):
     CHESTS = ["wood", "silver", "gold", "red", "blue", "purple"] # chest list
     RARES = ["bar", "sand"] # rare item
     FORBIDDEN = ["version", "last", "settings", "history", "favorites"] # forbidden raid name list
     THEME = ["light", "dark", "forest-light", "forest-dark"] # existing themes
     DEFAULT_LAYOUT = "[{'tab_image': 'bar', 'text': 'Bars', 'raids': [{'raid_image': 'bhl', 'text': 'BHL', 'loot': ['blue', 'ring3', 'bar']}, {'raid_image': 'akasha', 'text': 'Akasha', 'loot': ['blue', 'ring3', 'bar']}, {'raid_image': 'gohl', 'text': 'Grande', 'loot': ['blue', 'ring3', 'bar']}]}, {'tab_image': 'sand', 'text': 'Revans', 'raids': [{'raid_image': 'mugen', 'text': 'Mugen', 'loot': ['blue', 'wpn_mugen', 'wpn_mugen2', 'sand']}, {'raid_image': 'diaspora', 'text': 'Diaspora', 'loot': ['blue', 'wpn_diaspora', 'wpn_diaspora2', 'sand']}, {'raid_image': 'siegfried', 'text': 'Siegfried', 'loot': ['blue', 'wpn_siegfried', 'wpn_siegfried2', 'sand']}, {'raid_image': 'siete', 'text': 'Siete', 'loot': ['blue', 'wpn_siete', 'wpn_siete2', 'sand']}, {'raid_image': 'cosmos', 'text': 'Cosmos', 'loot': ['blue', 'wpn_cosmos', 'wpn_cosmos2', 'sand']}, {'raid_image': 'agastia', 'text': 'Agastia', 'loot': ['blue', 'wpn_agastia', 'wpn_agastia2', 'sand']}]}, {'tab_image': 'sand', 'text': 'Sands', 'raids': [{'raid_image': 'ennead', 'text': 'Enneads', 'loot': ['sand']}, {'raid_image': '6d', 'text': '6D', 'loot': ['fireearring', 'sand']}, {'raid_image': 'subaha', 'text': 'SuBaha', 'loot': ['sand']}, {'raid_image': 'hexa', 'text': 'Hexa', 'loot': ['sand']}]}]"
+    RAID_TAB_LIMIT = 6
     def __init__(self):
         Tk.Tk.__init__(self,None)
         self.parent = None
@@ -42,7 +48,7 @@ class Tracker(Tk.Tk):
         self.title("GBF Loot Tracker v" + self.version)
         self.iconbitmap('assets/icon.ico')
         self.resizable(width=False, height=False) # not resizable
-        self.minsize(240, 150)
+        self.minsize(MIN_WIDTH, MIN_HEIGHT)
         self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
         self.assets = {} # contains loaded images
         self.raid_data = {} # contains the layout
@@ -59,8 +65,9 @@ class Tracker(Tk.Tk):
         for ti, t in enumerate(layout): # top tabs
             tab = ttk.Frame(self.top_tab)
             self.top_tab.add(tab, text=t.get("text", ""))
-            self.top_tab.tab(tab, image=self.load_asset("assets/tabs/" + t.get("tab_image", "").replace(".png", "") + ".png", (20, 20)), compound=Tk.LEFT)
+            self.top_tab.tab(tab, image=self.load_asset("assets/tabs/" + t.get("tab_image", "").replace(".png", "") + ".png", SMALL_THUMBNAIL_SIZE), compound=Tk.LEFT)
             raid_tabs = ttk.Notebook(tab, takefocus=False)
+            tab_count = len(t.get("raids", []))
             for c, r in enumerate(t.get("raids", [])): # raid tabs
                 if "text" not in r or  r["text"] in self.raid_data:
                     continue
@@ -72,27 +79,28 @@ class Tracker(Tk.Tk):
                         self.tab_tree[rn] = (ti, c, raid_tabs)
                         self.raid_data[rn] = {}
                         sub = ttk.Frame(raid_tabs)
-                        raid_tabs.add(sub, text=rn)
-                        raid_tabs.tab(sub, image=self.load_asset("assets/tabs/" + r.get("raid_image", "").replace(".png", "") + ".png", (20, 20)), compound=Tk.LEFT)
+                        if tab_count <= self.RAID_TAB_LIMIT: raid_tabs.add(sub, text=rn)
+                        else: raid_tabs.add(sub)
+                        raid_tabs.tab(sub, image=self.load_asset("assets/tabs/" + r.get("raid_image", "").replace(".png", "") + ".png", SMALL_THUMBNAIL_SIZE), compound=Tk.LEFT)
                         self.set_tab_content(sub, r, self.raid_data[rn], True)
             raid_tabs.pack(expand=1, fill="both")
         # settings
         tab = ttk.Frame(self.top_tab)
         self.top_tab.add(tab, text="Settings")
-        self.top_tab.tab(tab, image=self.load_asset("assets/others/settings.png", (20, 20)), compound=Tk.LEFT)
-        self.make_button(tab, "Toggle Theme", self.toggle_theme, 0, 0, 3, "we", ("others", "theme", (20, 20)))
-        self.make_button(tab, "Layout Editor  ", self.open_layout_editor, 1, 0, 3, "we", ("others", "layout", (20, 20)))
-        self.make_button(tab, "Restart the App", self.restart, 2, 0, 3, "we", ("others", "restart", (20, 20)))
-        self.make_button(tab, "Open Statistics", self.stats, 3, 0, 3, "we", ("others", "stats", (20, 20)))
-        self.make_button(tab, "Export to Text", self.export_to_text, 4, 0, 3, "we", ("others", "export", (20, 20)))
-        self.make_button(tab, "What's New?   ", self.show_changelog, 5, 0, 3, "we", ("others", "new", (20, 20)))
-        self.make_button(tab, "Credits           ", self.show_credits, 6, 0, 3, "we", ("others", "credits", (20, 20)))
-        self.make_button(tab, "Github Repository", self.github, 0, 3, 3, "we", ("others", "github", (20, 20)))
-        self.make_button(tab, "Bug Report        ", self.github_issue, 1, 3, 3, "we", ("others", "bug", (20, 20)))
-        self.make_button(tab, "Check Updates   ", lambda : self.check_new_update(False), 2, 3, 3, "we", ("others", "update", (20, 20)))
-        self.make_button(tab, "Shortcut List       ", self.show_shortcut, 3, 3, 3, "we", ("others", "shortcut", (20, 20)))
-        self.make_button(tab, "Favorited           ", self.show_favorite, 4, 3, 3, "we", ("others", "favorite", (20, 20)))
-        self.make_button(tab, "Import from        ", self.import_data, 5, 3, 3, "we", ("others", "import", (20, 20)))
+        self.top_tab.tab(tab, image=self.load_asset("assets/others/settings.png", SMALL_THUMBNAIL_SIZE), compound=Tk.LEFT)
+        self.make_button(tab, "Toggle Theme", self.toggle_theme, 0, 0, 3, "we", ("others", "theme", SMALL_THUMBNAIL_SIZE))
+        self.make_button(tab, "Layout Editor  ", self.open_layout_editor, 1, 0, 3, "we", ("others", "layout", SMALL_THUMBNAIL_SIZE))
+        self.make_button(tab, "Restart the App", self.restart, 2, 0, 3, "we", ("others", "restart", SMALL_THUMBNAIL_SIZE))
+        self.make_button(tab, "Open Statistics", self.stats, 3, 0, 3, "we", ("others", "stats", SMALL_THUMBNAIL_SIZE))
+        self.make_button(tab, "Export to Text", self.export_to_text, 4, 0, 3, "we", ("others", "export", SMALL_THUMBNAIL_SIZE))
+        self.make_button(tab, "What's New?   ", self.show_changelog, 5, 0, 3, "we", ("others", "new", SMALL_THUMBNAIL_SIZE))
+        self.make_button(tab, "Credits           ", self.show_credits, 6, 0, 3, "we", ("others", "credits", SMALL_THUMBNAIL_SIZE))
+        self.make_button(tab, "Github Repository", self.github, 0, 3, 3, "we", ("others", "github", SMALL_THUMBNAIL_SIZE))
+        self.make_button(tab, "Bug Report        ", self.github_issue, 1, 3, 3, "we", ("others", "bug", SMALL_THUMBNAIL_SIZE))
+        self.make_button(tab, "Check Updates   ", lambda : self.check_new_update(False), 2, 3, 3, "we", ("others", "update", SMALL_THUMBNAIL_SIZE))
+        self.make_button(tab, "Shortcut List       ", self.show_shortcut, 3, 3, 3, "we", ("others", "shortcut", SMALL_THUMBNAIL_SIZE))
+        self.make_button(tab, "Favorited           ", self.show_favorite, 4, 3, 3, "we", ("others", "favorite", SMALL_THUMBNAIL_SIZE))
+        self.make_button(tab, "Import from        ", self.import_data, 5, 3, 3, "we", ("others", "import", SMALL_THUMBNAIL_SIZE))
         # check boxes
         self.show_notif = Tk.IntVar()
         ttk.Checkbutton(tab, text='Show notifications', variable=self.show_notif, command=self.toggle_notif).grid(row=0, column=6, columnspan=5, sticky="we")
@@ -173,7 +181,7 @@ class Tracker(Tk.Tk):
         rn = layout["text"]
         frame = ttk.Frame(parent)
         frame.grid(row=0, column=0)
-        button = self.make_button(frame, "", None, 0, 0, 1, "w", ("buttons", layout.get("raid_image", ""), (50, 50)))
+        button = self.make_button(frame, "", None, 0, 0, 1, "w", ("buttons", layout.get("raid_image", ""), BIG_THUMBNAIL_SIZE))
         button.bind('<Button-1>', lambda ev, btn=button, rn=rn: self.count(btn, rn, "", add=True))
         button.bind('<Button-3>', lambda ev, btn=button, rn=rn: self.count(btn, rn, "", add=False))
         label = Tk.Label(frame, text="0") # Total label
@@ -202,7 +210,7 @@ class Tracker(Tk.Tk):
             if is_main_window and l in self.RARES:
                 if rn not in self.got_rare: self.got_rare[rn] = []
                 self.got_rare[rn].append(l)
-            button = self.make_button(frame, "", None, 0, i+1, 1, "w", ("buttons", l, (50, 50)))
+            button = self.make_button(frame, "", None, 0, i+1, 1, "w", ("buttons", l, BIG_THUMBNAIL_SIZE))
             button.bind('<Button-1>', lambda ev, btn=button, rn=rn, l=l: self.count(btn, rn, l, add=True))
             button.bind('<Button-3>', lambda ev, btn=button, rn=rn, l=l: self.count(btn, rn, l, add=False))
             d = [0, None, None] # other buttons got two labels (count and percent)
@@ -214,8 +222,8 @@ class Tracker(Tk.Tk):
                 d.append(Tk.Label(frame, text="0%"))
                 d[3].grid(row=3, column=i+1)
             container[l] = d
-        self.make_button(frame, "0", lambda rn=rn: self.reset(rn), 4, 0, 1, "we", ("others", "reset", (20, 20)))
-        if is_main_window: self.make_button(frame, "P", lambda rn=rn: self.detach(rn), 4, 1, 1, "we", ("others", "detach", (20, 20)))
+        self.make_button(frame, "0", lambda rn=rn: self.reset(rn), 4, 0, 1, "we", ("others", "reset", SMALL_THUMBNAIL_SIZE))
+        if is_main_window: self.make_button(frame, "P", lambda rn=rn: self.detach(rn), 4, 1, 1, "we", ("others", "detach", SMALL_THUMBNAIL_SIZE))
 
     def make_button(self, parent : Tk.Tk, text : str, command : Optional[Callable], row : int, column : int, columnspan : int, sticky : str, asset_tuple : Optional[tuple] = None): # function to make our buttons. Asset tuple is composed of 3 elements: folder, asset name and a size tuple (in pixels)
         if asset_tuple is not None:
@@ -864,6 +872,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self): # display the changelog
         changelog = [
+            "1.47 - Raid tabs size is reduced if more than six raids are present in the same category.",
             "1.46 - Fixed keyboard navigation not working on tabs after clicking a tab.",
             "1.45 - Fixed a bug causing notifications to be removed too early.",
             "1.44 - Fixed the various raid buttons of the Layout Editor being binded to the wrong raid in some cases.",
@@ -872,8 +881,7 @@ class Tracker(Tk.Tk):
             "1.41 - Added the new Revans weapons. If you modified your 'raids.json', you have to add them manually.",
             "1.40 - The shortcut key 'M' now asks for confirmation. 'M', 'O' anc 'C' are also usable when a Raid popup is the focus.",
             "1.39 - Added shortcuts to memorize ('M') and open ('O') Raid popups, and another to close ('C') all Raid popups. Shortcut keys 'T', 'S', 'L' and 'N' are now usable when a Raid popup is the focus.",
-            "1.38 - Added welcome notifications and a Preview button in the Editor.",
-            "1.37 - Fixed the \"add tab between\" Editor buttons."
+            "1.38 - Added welcome notifications and a Preview button in the Editor."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
@@ -985,7 +993,7 @@ class DetachedRaid(Tk.Toplevel): # detached raid window
         Tk.Toplevel.__init__(self,parent)
         self.title(rname)
         self.resizable(width=False, height=False) # not resizable
-        self.minsize(240, 150)
+        self.minsize(MIN_WIDTH, MIN_HEIGHT)
         self.iconbitmap('assets/icon.ico')
         self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
         if self.parent.settings.get("top_most", 0) == 1:
@@ -1057,7 +1065,7 @@ class StatScreen(Tk.Toplevel): # stats window
         count = 0
         for l, s in data.items():
             if s == 0: break
-            asset = self.parent.load_asset("assets/buttons/" + (l.replace(".png", "") if l != "" else "unknown") + ".png", (50, 50))
+            asset = self.parent.load_asset("assets/buttons/" + (l.replace(".png", "") if l != "" else "unknown") + ".png", BIG_THUMBNAIL_SIZE)
             Tk.Label(self, image=asset).grid(row=5 + count // self.WIDTH, column=count % self.WIDTH * 2)
             Tk.Label(self, text=str(s)).grid(row=5 + count // self.WIDTH, column=count % self.WIDTH * 2 + 1)
             count += 1
@@ -1081,10 +1089,10 @@ class Editor(Tk.Toplevel): # editor window
         self.assets = {} # loaded images
         self.layout = self.load_raids() # load raids.json
         self.layout_string = str(self.layout) # and make a string out of it to detect modifications
-        self.parent.make_button(self, "Verify and save changes", self.save, 0, 0, 3, "we", ("others", "save", (20, 20)))
-        self.parent.make_button(self, "Add Tab", self.insert_tab, 1, 0, 1, "we", ("others", "add", (20, 20)))
-        self.parent.make_button(self, "Refresh", lambda : self.update_layout(self.current_selected), 1, 1, 1, "we", ("others", "refresh", (20, 20)))
-        self.parent.make_button(self, "Full Reset", self.reset, 1, 2, 1, "we", ("others", "reset", (20, 20)))
+        self.parent.make_button(self, "Verify and save changes", self.save, 0, 0, 3, "we", ("others", "save", SMALL_THUMBNAIL_SIZE))
+        self.parent.make_button(self, "Add Tab", self.insert_tab, 1, 0, 1, "we", ("others", "add", SMALL_THUMBNAIL_SIZE))
+        self.parent.make_button(self, "Refresh", lambda : self.update_layout(self.current_selected), 1, 1, 1, "we", ("others", "refresh", SMALL_THUMBNAIL_SIZE))
+        self.parent.make_button(self, "Full Reset", self.reset, 1, 2, 1, "we", ("others", "reset", SMALL_THUMBNAIL_SIZE))
         self.top_frame = ttk.Frame(self) # top frame
         self.top_frame.grid(row=2, column=0, columnspan=3, sticky="we")
         self.tab_text_var = [] # will contain tab related string vars
@@ -1096,7 +1104,7 @@ class Editor(Tk.Toplevel): # editor window
         self.selected.grid(row=4, column=0, columnspan=3, sticky="we")
         self.raid_header = Tk.Label(self.selected, text="No Tab Selected")
         self.raid_header.grid(row=0, column=0, columnspan=6, sticky="w")
-        self.raid_header_add = self.parent.make_button(self.selected, "Add Raid", self.reset, 1, 0, 3, "w", ("others", "add", (20, 20)))
+        self.raid_header_add = self.parent.make_button(self.selected, "Add Raid", self.reset, 1, 0, 3, "w", ("others", "add", SMALL_THUMBNAIL_SIZE))
         self.raid_header_add.grid_forget()
         self.current_selected = None # id of the current selected tab
         self.update_layout() # first update of the layout
@@ -1232,7 +1240,7 @@ class Editor(Tk.Toplevel): # editor window
                 entry = ttk.Entry(self.top_frame, textvariable=self.tab_text_var[-1])
                 entry.grid(row=i+1, column=2, sticky="w")
                 self.tab_container[-1].append(entry)
-                label = Tk.Label(self.top_frame, text="Image", compound=Tk.RIGHT, image=self.parent.load_asset("assets/tabs/" + t.get("tab_image", "").replace(".png", "") + ".png", (20, 20)))
+                label = Tk.Label(self.top_frame, text="Image", compound=Tk.RIGHT, image=self.parent.load_asset("assets/tabs/" + t.get("tab_image", "").replace(".png", "") + ".png", SMALL_THUMBNAIL_SIZE))
                 label.grid(row=i+1, column=3, sticky="w")
                 self.tab_container[-1].append(label)
                 self.tab_text_var.append(Tk.StringVar())
@@ -1241,18 +1249,18 @@ class Editor(Tk.Toplevel): # editor window
                 entry = ttk.Entry(self.top_frame, textvariable=self.tab_text_var[-1])
                 entry.grid(row=i+1, column=4, sticky="w")
                 self.tab_container[-1].append(entry)
-                self.tab_container[-1].append(self.parent.make_button(self.top_frame, "", lambda i=i: self.update_select(i), i+1, 5, 1, "w", ("others", "edit", (20, 20))))
-                self.tab_container[-1].append(self.parent.make_button(self.top_frame, "", lambda i=i: self.insert_tab(i), i+1, 6, 1, "w", ("others", "add", (20, 20))))
-                self.tab_container[-1].append(self.parent.make_button(self.top_frame, "", lambda i=i: self.move_tab(i, -1), i+1, 7, 1, "w", ("others", "up", (20, 20))))
+                self.tab_container[-1].append(self.parent.make_button(self.top_frame, "", lambda i=i: self.update_select(i), i+1, 5, 1, "w", ("others", "edit", SMALL_THUMBNAIL_SIZE)))
+                self.tab_container[-1].append(self.parent.make_button(self.top_frame, "", lambda i=i: self.insert_tab(i), i+1, 6, 1, "w", ("others", "add", SMALL_THUMBNAIL_SIZE)))
+                self.tab_container[-1].append(self.parent.make_button(self.top_frame, "", lambda i=i: self.move_tab(i, -1), i+1, 7, 1, "w", ("others", "up", SMALL_THUMBNAIL_SIZE)))
                 if i == 0: self.tab_container[-1][-1].grid_forget()
-                self.tab_container[-1].append(self.parent.make_button(self.top_frame, "", lambda i=i: self.move_tab(i, 1), i+1, 8, 1, "w", ("others", "down", (20, 20))))
+                self.tab_container[-1].append(self.parent.make_button(self.top_frame, "", lambda i=i: self.move_tab(i, 1), i+1, 8, 1, "w", ("others", "down", SMALL_THUMBNAIL_SIZE)))
                 if i == len(self.layout) - 1: self.tab_container[-1][-1].grid_forget()
-                self.tab_container[-1].append(self.parent.make_button(self.top_frame, "", lambda i=i: self.delete_tab(i), i+1, 9, 1, "w", ("others", "del", (20, 20))))
+                self.tab_container[-1].append(self.parent.make_button(self.top_frame, "", lambda i=i: self.delete_tab(i), i+1, 9, 1, "w", ("others", "del", SMALL_THUMBNAIL_SIZE)))
             else: #edit existing line
                 self.tab_text_var[i*2].trace_remove("write", self.tab_text_var[i*2].trace_info()[0][1])
                 self.tab_text_var[i*2].set(t.get("text", ""))
                 self.tab_text_var[i*2].trace_add("write", lambda name, index, mode, sv=self.tab_text_var[i*2], i=i: self.edit_entry(sv, i, None, "text"))
-                self.tab_container[i][3].config(image=self.parent.load_asset("assets/tabs/" + t.get("tab_image", "").replace(".png", "") + ".png", (20, 20)))
+                self.tab_container[i][3].config(image=self.parent.load_asset("assets/tabs/" + t.get("tab_image", "").replace(".png", "") + ".png", SMALL_THUMBNAIL_SIZE))
                 self.tab_text_var[i*2+1].trace_remove("write", self.tab_text_var[i*2+1].trace_info()[0][1])
                 self.tab_text_var[i*2+1].set(t.get("tab_image", ""))
                 self.tab_text_var[i*2+1].trace_add("write", lambda name, index, mode, sv=self.tab_text_var[i*2+1], i=i: self.edit_entry(sv, i, None, "tab_image"))
@@ -1297,7 +1305,7 @@ class Editor(Tk.Toplevel): # editor window
                     entry = ttk.Entry(self.selected, textvariable=self.raid_text_var[-1])
                     entry.grid(row=i+2, column=2, sticky="w")
                     self.raid_container[-1].append(entry)
-                    label = Tk.Label(self.selected, text="Image", compound=Tk.RIGHT, image=self.parent.load_asset("assets/tabs/" + r.get("raid_image", "").replace(".png", "") + ".png", (20, 20)))
+                    label = Tk.Label(self.selected, text="Image", compound=Tk.RIGHT, image=self.parent.load_asset("assets/tabs/" + r.get("raid_image", "").replace(".png", "") + ".png", SMALL_THUMBNAIL_SIZE))
                     label.grid(row=i+2, column=3, sticky="w")
                     self.raid_container[-1].append(label)
                     self.raid_text_var.append(Tk.StringVar())
@@ -1309,25 +1317,25 @@ class Editor(Tk.Toplevel): # editor window
                     label = Tk.Label(self.selected, text="Loots")
                     label.grid(row=i+2, column=5, sticky="w")
                     self.raid_container[-1].append(label)
-                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.see_loot(index, i), i+2, 6, 1, "w", ("others", "see", (20, 20))))
+                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.see_loot(index, i), i+2, 6, 1, "w", ("others", "see", SMALL_THUMBNAIL_SIZE)))
                     self.raid_text_var.append(Tk.StringVar())
                     self.raid_text_var[-1].set("/".join(r.get("loot", "")))
                     self.raid_text_var[-1].trace_add("write", lambda name, index, mode, sv=self.raid_text_var[-1], idx=index, i=i: self.edit_entry(sv, i, idx, "loot"))
                     entry = ttk.Entry(self.selected, textvariable=self.raid_text_var[-1])
                     entry.grid(row=i+2, column=7, sticky="w")
                     self.raid_container[-1].append(entry)
-                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.insert_raid(index, i), i+2, 8, 1, "w", ("others", "add", (20, 20))))
-                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.move_raid_to(index, i), i+2, 9, 1, "w", ("others", "move", (20, 20))))
-                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.move_raid(index, i, -1), i+2, 10, 1, "w", ("others", "up", (20, 20))))
+                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.insert_raid(index, i), i+2, 8, 1, "w", ("others", "add", SMALL_THUMBNAIL_SIZE)))
+                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.move_raid_to(index, i), i+2, 9, 1, "w", ("others", "move", SMALL_THUMBNAIL_SIZE)))
+                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.move_raid(index, i, -1), i+2, 10, 1, "w", ("others", "up", SMALL_THUMBNAIL_SIZE)))
                     if i == 0:  self.raid_container[-1][-1].grid_forget()
-                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.move_raid(index, i, 1), i+2, 11, 1, "w", ("others", "down", (20, 20))))
+                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.move_raid(index, i, 1), i+2, 11, 1, "w", ("others", "down", SMALL_THUMBNAIL_SIZE)))
                     if i == len(self.layout[index]["raids"]) - 1:  self.raid_container[-1][-1].grid_forget()
-                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.delete_raid(index, i), i+2, 12, 1, "w", ("others", "del", (20, 20))))
+                    self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.delete_raid(index, i), i+2, 12, 1, "w", ("others", "del", SMALL_THUMBNAIL_SIZE)))
                 else:
                     self.raid_text_var[i*3].trace_remove("write", self.raid_text_var[i*3].trace_info()[0][1])
                     self.raid_text_var[i*3].set(r.get("text", ""))
                     self.raid_text_var[i*3].trace_add("write", lambda name, index, mode, sv=self.raid_text_var[i*3], idx=index, i=i: self.edit_entry(sv, i, idx, "text"))
-                    self.raid_container[i][3].config(image=self.parent.load_asset("assets/tabs/" + r.get("raid_image", "").replace(".png", "") + ".png", (20, 20)))
+                    self.raid_container[i][3].config(image=self.parent.load_asset("assets/tabs/" + r.get("raid_image", "").replace(".png", "") + ".png", SMALL_THUMBNAIL_SIZE))
                     self.raid_text_var[i*3+1].trace_remove("write", self.raid_text_var[i*3+1].trace_info()[0][1])
                     self.raid_text_var[i*3+1].set(r.get("raid_image", ""))
                     self.raid_text_var[i*3+1].trace_add("write", lambda name, index, mode, sv=self.raid_text_var[i*3+1], idx=index, i=i: self.edit_entry(sv, i, idx, "raid_image"))
@@ -1383,10 +1391,10 @@ class PreviewLoot(Tk.Toplevel): # preview window
         Tk.Toplevel.__init__(self,parent)
         self.title("Preview")
         self.resizable(width=False, height=False) # not resizable
-        self.minsize(240, 150)
+        self.minsize(MIN_WIDTH, MIN_HEIGHT)
         self.iconbitmap('assets/icon.ico')
         self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
-        self.parent.parent.make_button(self, "", None, 0, 0, 1, "w", ("buttons", rname, (50, 50)))
+        self.parent.parent.make_button(self, "", None, 0, 0, 1, "w", ("buttons", rname, BIG_THUMBNAIL_SIZE))
         Tk.Label(self, text="0").grid(row=1, column=0)
         Tk.Label(self, text="Total").grid(row=2, column=0)
         chest = None
@@ -1409,13 +1417,13 @@ class PreviewLoot(Tk.Toplevel): # preview window
             elif l in self.parent.parent.CHESTS and l != chest:
                 problems.append("- Multiple chests in the loot list : '{}' (Remove the unwanted chests).".format(l))
                 continue
-            self.parent.parent.make_button(self, "", None, 0, i+1, 1, "w", ("buttons", l, (50, 50)))
+            self.parent.parent.make_button(self, "", None, 0, i+1, 1, "w", ("buttons", l, BIG_THUMBNAIL_SIZE))
             Tk.Label(self, text="0").grid(row=1, column=i+1)
             Tk.Label(self, text="0%").grid(row=2, column=i+1)
             if chest is not None and l != chest: Tk.Label(self, text="0%").grid(row=3, column=i+1)
             llist.add(l)
         if len(problems) > 0:
-            self.parent.parent.make_button(self, "", lambda problems=problems : self.show_problems(problems), 4, 0, 1, "we", ("others", "warning", (20, 20)))
+            self.parent.parent.make_button(self, "", lambda problems=problems : self.show_problems(problems), 4, 0, 1, "we", ("others", "warning", SMALL_THUMBNAIL_SIZE))
         if self.parent.parent.settings.get("top_most", 0) == 1:
             self.attributes('-topmost', True)
 
