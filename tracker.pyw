@@ -600,13 +600,13 @@ class Tracker(Tk.Tk):
             i = v[0]
             v[1].config(text =str(i))
             if total > 0:
-                v[2].config(text="{:.2f}%".format(min(100, 100*float(i)/total)).replace('.00', ''))
+                v[2].config(text="{:.2f}%".format(min(100, 100*float(i)/total)).replace('0%', '%').replace('.0%', '%'))
             else:
                 v[2].config(text="0%")
             # chest percentage
             if rname in self.got_chest and len(v) == 4:
                 if chest_count > 0:
-                    v[3].config(text="{:.2f}%".format(min(100, 100*float(v[0])/chest_count)).replace('.00', ''))
+                    v[3].config(text="{:.2f}%".format(min(100, 100*float(v[0])/chest_count)).replace('0%', '%').replace('.0%', '%'))
                 else:
                     v[3].config(text="0%")
         
@@ -872,6 +872,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self) -> None: # display the changelog
         changelog = [
+            "1.49 - Added raid thumbnails to stat screen.",
             "1.48 - The statistics window is now more detailed.",
             "1.47 - Raid tabs size is reduced if more than six raids are present in the same category.",
             "1.46 - Fixed keyboard navigation not working on tabs after clicking a tab.",
@@ -880,8 +881,7 @@ class Tracker(Tk.Tk):
             "1.43 - 'save.json' and 'assets/raids.json' are now backed up before updating.",
             "1.42 - Fixed an issue in the auto-updater causing custom raids.json to be overwritten.",
             "1.41 - Added the new Revans weapons. If you modified your 'raids.json', you have to add them manually.",
-            "1.40 - The shortcut key 'M' now asks for confirmation. 'M', 'O' anc 'C' are also usable when a Raid popup is the focus.",
-            "1.39 - Added shortcuts to memorize ('M') and open ('O') Raid popups, and another to close ('C') all Raid popups. Shortcut keys 'T', 'S', 'L' and 'N' are now usable when a Raid popup is the focus."
+            "1.40 - The shortcut key 'M' now asks for confirmation. 'M', 'O' anc 'C' are also usable when a Raid popup is the focus."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
@@ -899,7 +899,7 @@ class Tracker(Tk.Tk):
             for x, y in v.items():
                 if x == "": continue
                 report += "- {:} - {:,} times".format(x, y[0])
-                if x != cname: report += " ({:.2f}%)".format(100*y[0]/total).replace(".00", "")
+                if x != cname: report += " ({:.2f}%)".format(100*y[0]/total).replace('0%', '%').replace('.0%', '%')
                 report += "\r\n"
             if k in self.history:
                 add = ""
@@ -1051,17 +1051,17 @@ class StatScreen(Tk.Toplevel): # stats window
         data = {}
         total = {}
         raid_counts = {}
-        for n, r in self.parent.raid_data.items():
-            chest = self.parent.got_chest.get(n, None)
-            for l, s in r.items():
-                data[l] = data.get(l, 0) + s[0]
-                if l == "" and s[0] > 0:
-                    raid_counts[n] = s[0]
-                    total[''] = total.get('', 0) +s[0]
-                elif l == chest or chest is None:
-                    total[l] = total.get(l, 0) + r[''][0]
+        for name, raid in self.parent.raid_data.items():
+            chest = self.parent.got_chest.get(name, None)
+            for loot, count in raid.items():
+                data[loot] = data.get(loot, 0) + count[0]
+                if loot == "" and count[0] > 0:
+                    raid_counts[name] = count[0]
+                    total[''] = total.get('', 0) + count[0]
+                elif loot == chest or chest is None:
+                    total[loot] = total.get(loot, 0) + raid[''][0]
                 else:
-                    total[l] = total.get(l, 0) + r[chest][0]
+                    total[loot] = total.get(loot, 0) + raid[chest][0]
         # sorted
         data = dict(sorted(data.items(), key=lambda item: item[1], reverse=True))
         raid_counts = dict(sorted(raid_counts.items(), key=lambda item: item[1], reverse=True))
@@ -1069,18 +1069,18 @@ class StatScreen(Tk.Toplevel): # stats window
         # raid ranking
         if len(raid_counts) > 0:
             count = 0
-            for n, s in raid_counts.items():
-                Tk.Label(self.frame, text="#{:}: {:} - {:} times ({:.2f}%)".format(count+1, n, s, 100 * s / data.get("", 1)).replace('0%', '%').replace('.0%', '%')).grid(row=count%5, column=count//5*self.TEXT_WIDTH, columnspan=self.TEXT_WIDTH, sticky="w")
+            for name, value in raid_counts.items():
+                Tk.Label(self.frame, text="{:} - {:} times ({:.2f}%)".format(name, value, 100 * value / data.get("", 1)).replace('0%', '%').replace('.0%', '%'), compound=Tk.LEFT, image=self.parent.load_asset("assets/tabs/" +self.parent.raid_data[name][""][4].get('raid_image', '').replace(".png", "") + ".png", self.parent.SMALL_THUMB)).grid(row=count%5, column=count//5*self.TEXT_WIDTH, columnspan=self.TEXT_WIDTH, sticky="w")
                 count += 1
                 if count >= self.RAID_TOP: break # stop
         ttk.Separator(self.frame, orient='horizontal').grid(row=self.RAID_TOP, column=0, columnspan=max(self.ITEM_COLUMN*2, self.TEXT_WIDTH*2), sticky="we") # separator to make it pretty
         # item data
         count = 0
-        for l, s in data.items():
-            if s == 0: break
-            asset = self.parent.load_asset("assets/buttons/" + (l.replace(".png", "") if l != "" else "unknown") + ".png", self.parent.BIG_THUMB)
+        for loot, value in data.items():
+            if value == 0: break
+            asset = self.parent.load_asset("assets/buttons/" + (loot.replace(".png", "") if loot != "" else "unknown") + ".png", self.parent.BIG_THUMB)
             Tk.Label(self.frame, image=asset).grid(row=self.RAID_TOP + 1 + count // self.ITEM_COLUMN, column=count % self.ITEM_COLUMN * 2)
-            Tk.Label(self.frame, text='{:}\n{:.2f}%'.format(s, 100*s/float(total[l])).replace('0%', '%').replace('.0%', '%') if l != "" else str(s)+"\nraids").grid(row=self.RAID_TOP + 1 + count // self.ITEM_COLUMN, column=count % self.ITEM_COLUMN * 2 + 1)
+            Tk.Label(self.frame, text='{:}\n{:.2f}%'.format(value, 100*value/float(total[loot])).replace('0%', '%').replace('.0%', '%') if loot != "" else str(value)+"\nraids").grid(row=self.RAID_TOP + 1 + count // self.ITEM_COLUMN, column=count % self.ITEM_COLUMN * 2 + 1)
             count += 1
         # message if no data
         if count == 0:
