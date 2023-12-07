@@ -40,6 +40,6 @@ if sys.version_info.major != int(pver[0]) or sys.version_info.minor < int(pver[1
     err_report +=  "# Error: Your python version is v{}.{}. At least Python v{} is recommended. Please uninstall Python and install a newer one.\n".format(sys.version_info.major, sys.version_info.minor, ".".join(pver))
 
 if err_report == "":
-    messagebox.showinfo("Info", "No anomaly detected.")
+    messagebox.showinfo("Report", "No anomaly detected.")
 else:
-    messagebox.showerror("Error Report", "The following anomalies have been detected:\n" + err_report + "\nIf the tracker doesn't run at all, check the installation steps again.\nYou can also check the Issues on github to see if someone else has the same problem (or open one yourself). Else, you can try reinstalling.\nBe sure to keep your 'save.json' file if it's not corrupted.")
+    messagebox.showerror("Report", "The following anomalies have been detected:\n" + err_report + "\nIf the tracker doesn't run at all, check the installation steps again.\nYou can also check the Issues on github to see if someone else has the same problem (or open one yourself). Else, you can try reinstalling.\nBe sure to keep your 'save.json' file if it's not corrupted.")
