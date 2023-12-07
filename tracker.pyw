@@ -923,7 +923,7 @@ class Tracker(Tk.Tk):
         else: self.import_window = ImportDial(self)
 
 class ImportDial(Tk.Toplevel):
-    def __init__(self, parent : Tk.Tk) -> None:
+    def __init__(self, parent : Tracker) -> None:
         # window
         self.parent = parent
         Tk.Toplevel.__init__(self,parent)
@@ -988,7 +988,7 @@ class ImportDial(Tk.Toplevel):
         self.destroy()
 
 class DetachedRaid(Tk.Toplevel): # detached raid window
-    def __init__(self, parent : Tk.Tk, rname : str, position : Optional[list] = None) -> None:
+    def __init__(self, parent : Tracker, rname : str, position : Optional[list] = None) -> None:
         # window
         self.parent = parent
         Tk.Toplevel.__init__(self,parent)
@@ -1023,7 +1023,7 @@ class StatScreen(Tk.Toplevel): # stats window
     TEXT_WIDTH = 5
     BOLD_FONT_MOD = 2
     RAID_TOP = 10
-    def __init__(self, parent : Tk.Tk) -> None:
+    def __init__(self, parent : Tracker) -> None:
         # window
         self.parent = parent
         Tk.Toplevel.__init__(self,parent)
@@ -1095,7 +1095,7 @@ class StatScreen(Tk.Toplevel): # stats window
         self.destroy()
 
 class Editor(Tk.Toplevel): # editor window
-    def __init__(self, parent : Tk.Tk) -> None:
+    def __init__(self, parent : Tracker) -> None:
         self.parent = parent
         Tk.Toplevel.__init__(self,parent)
         self.title("GBF Loot Tracker - Layout editor")
@@ -1403,7 +1403,7 @@ class Editor(Tk.Toplevel): # editor window
             return False
 
 class PreviewLoot(Tk.Toplevel): # preview window
-    def __init__(self, parent : Tk.Tk, rname : str, loot : list) -> None:
+    def __init__(self, parent : Editor, rname : str, loot : list) -> None:
         # window
         self.parent = parent
         Tk.Toplevel.__init__(self,parent)
