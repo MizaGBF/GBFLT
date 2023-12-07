@@ -187,7 +187,7 @@ class Tracker(Tk.Tk):
         label = Tk.Label(frame, text="0") # Total label
         label.grid(row=1, column=0)
         hist = Tk.Label(frame, text="") # History label
-        hist.grid(row=4, column=2 if is_main_window else 1, columnspan=10)
+        hist.grid(row=4, column=2 if is_main_window else 1, columnspan=100)
         container[""] = [0, label, hist, frame, layout, None] # the "" key is used for the total. this value contains: total counter, its label, the history label, the tab frame, the container frame, the detach button and the window if open
         # check for chest in the list
         if is_main_window:
@@ -428,6 +428,10 @@ class Tracker(Tk.Tk):
         try:
             with open('assets/raids.json', mode='r', encoding='utf-8') as f:
                 data = json.load(f)
+            if '-debug_raid' in sys.argv: # used to update DEFAULT_LAYOUT
+                with open('debug_raid.txt', mode='w', encoding='utf-8') as g:
+                    g.write(str(data))
+                    print('debug_raid.txt created')
             self.og_raidlayout = (str(data) == self.DEFAULT_LAYOUT)
         except Exception as e:
             data = []
@@ -575,7 +579,7 @@ class Tracker(Tk.Tk):
         chest_count = 0
         if rname in self.got_chest: # get total of chest
             chest_count = data[self.got_chest[rname]][0]
-        data[""][1].config(text=str(total))
+        data[""][1].config(text="{:,}".format(total))
         # update "since the last" label
         if rname in self.got_rare:
             k = self.got_rare[rname][0]
@@ -598,7 +602,7 @@ class Tracker(Tk.Tk):
         for k, v in data.items():
             if k == "": continue
             i = v[0]
-            v[1].config(text =str(i))
+            v[1].config(text="{:,}".format(i))
             if total > 0:
                 v[2].config(text="{:.2f}%".format(min(100, 100*float(i)/total)).replace('0%', '%').replace('.0%', '%'))
             else:
@@ -872,6 +876,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self) -> None: # display the changelog
         changelog = [
+            "1.50 - Added thousand separators for big numbers. Fixed some very minor UI issues.",
             "1.49 - Added raid thumbnails to stat screen.",
             "1.48 - The statistics window is now more detailed.",
             "1.47 - Raid tabs size is reduced if more than six raids are present in the same category.",
@@ -880,8 +885,7 @@ class Tracker(Tk.Tk):
             "1.44 - Fixed the various raid buttons of the Layout Editor being binded to the wrong raid in some cases.",
             "1.43 - 'save.json' and 'assets/raids.json' are now backed up before updating.",
             "1.42 - Fixed an issue in the auto-updater causing custom raids.json to be overwritten.",
-            "1.41 - Added the new Revans weapons. If you modified your 'raids.json', you have to add them manually.",
-            "1.40 - The shortcut key 'M' now asks for confirmation. 'M', 'O' anc 'C' are also usable when a Raid popup is the focus."
+            "1.41 - Added the new Revans weapons. If you modified your 'raids.json', you have to add them manually."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
@@ -1070,7 +1074,7 @@ class StatScreen(Tk.Toplevel): # stats window
         if len(raid_counts) > 0:
             count = 0
             for name, value in raid_counts.items():
-                Tk.Label(self.frame, text="{:} - {:} times ({:.2f}%)".format(name, value, 100 * value / data.get("", 1)).replace('0%', '%').replace('.0%', '%'), compound=Tk.LEFT, image=self.parent.load_asset("assets/tabs/" +self.parent.raid_data[name][""][4].get('raid_image', '').replace(".png", "") + ".png", self.parent.SMALL_THUMB)).grid(row=count%5, column=count//5*self.TEXT_WIDTH, columnspan=self.TEXT_WIDTH, sticky="w")
+                Tk.Label(self.frame, text="{:} - {:,} times ({:.2f}%)".format(name, value, 100 * value / data.get("", 1)).replace('0%', '%').replace('.0%', '%'), compound=Tk.LEFT, image=self.parent.load_asset("assets/tabs/" +self.parent.raid_data[name][""][4].get('raid_image', '').replace(".png", "") + ".png", self.parent.SMALL_THUMB)).grid(row=count%5, column=count//5*self.TEXT_WIDTH, columnspan=self.TEXT_WIDTH, sticky="w")
                 count += 1
                 if count >= self.RAID_TOP: break # stop
         ttk.Separator(self.frame, orient='horizontal').grid(row=self.RAID_TOP, column=0, columnspan=max(self.ITEM_COLUMN*2, self.TEXT_WIDTH*2), sticky="we") # separator to make it pretty
@@ -1080,7 +1084,7 @@ class StatScreen(Tk.Toplevel): # stats window
             if value == 0: break
             asset = self.parent.load_asset("assets/buttons/" + (loot.replace(".png", "") if loot != "" else "unknown") + ".png", self.parent.BIG_THUMB)
             Tk.Label(self.frame, image=asset).grid(row=self.RAID_TOP + 1 + count // self.ITEM_COLUMN, column=count % self.ITEM_COLUMN * 2)
-            Tk.Label(self.frame, text='{:}\n{:.2f}%'.format(value, 100*value/float(total[loot])).replace('0%', '%').replace('.0%', '%') if loot != "" else str(value)+"\nraids").grid(row=self.RAID_TOP + 1 + count // self.ITEM_COLUMN, column=count % self.ITEM_COLUMN * 2 + 1)
+            Tk.Label(self.frame, text='{:,}\n{:.2f}%'.format(value, 100*value/float(total[loot])).replace('0%', '%').replace('.0%', '%') if loot != "" else "{:,}\nraids".format(value)).grid(row=self.RAID_TOP + 1 + count // self.ITEM_COLUMN, column=count % self.ITEM_COLUMN * 2 + 1)
             count += 1
         # message if no data
         if count == 0:
