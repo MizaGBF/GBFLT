@@ -28,7 +28,7 @@ If you downloaded this application for the first time and it doesn't run, check 
 3. If it still doesn't start, go into the `assets` folder and try to run `troubleshooting.pyw`. If it doesn't run too, something is very wrong with your installation (if you have multiple Python versions installed including an old one, it might be the problem). If it runs, it should tell you what's wrong (if not, open an [Issue](https://github.com/MizaGBF/GBFLT/issues)).  
   
 ### Usage  
-* Simply double-click on `tracker.pyw`, assuming Python is installed correctly. If nothing happens, see the `Issues` section below.  
+* Simply double-click on `tracker.pyw`, assuming Python is installed correctly. If nothing happens, see the `Troubleshooting` section above.  
 * Left Click on a button to increase the counter.  
 * Right Click on a button to decrease the counter.  
 * The reset button will reset the current tab.  
@@ -60,12 +60,6 @@ If it doesn't work or if you want to manually update:
 * `Right`: Go to the raid on the right.  
 * `Shit+F1~F12`: Set the current raid to the Function Key pressed.  
 * `F1~F12`: Go to the raid associated to this Function key.  
-  
-### Issues  
-If the application doesn't start at all, your Python version might be outdated.  
-Uninstall and install a more recent [version](https://www.python.org/downloads/).  
-You can also try to run `assets/troubleshooting.pyw` to see if it detects any problem.  
-Else, if you encountered a bug in the application itself, open an issue or contact me directly.  
   
 ### Support  
 Just drop a star on the top right corner of this page if you want to show your support.  
