@@ -10,6 +10,7 @@ import sys
 import zipfile
 from io import BytesIO
 import os
+import shutil
 import copy
 from typing import Callable, Optional
 from datetime import datetime
@@ -38,6 +39,7 @@ class Tracker(Tk.Tk):
         self.stats_window = None # reference to the current stat window
         self.import_window = None # reference to the current import window
         self.editor_window = None # reference to the current editor window
+        self.history_window = None # reference to the current history window
         errors = self.load_manifest()
         savedata, rerrors = self.load_savedata()
         errors += rerrors
@@ -114,6 +116,9 @@ class Tracker(Tk.Tk):
         self.check_update = Tk.IntVar()
         ttk.Checkbutton(tab, text='Auto Check Updates', variable=self.check_update, command=self.toggle_checkupdate).grid(row=2, column=6, columnspan=5, sticky="we")
         self.check_update.set(self.settings.get("check_update", 0))
+        self.backup_save = Tk.IntVar()
+        ttk.Checkbutton(tab, text='Backup Save on startup', variable=self.backup_save, command=self.toggle_backup).grid(row=3, column=6, columnspan=5, sticky="we")
+        self.backup_save.set(self.settings.get("backup_save", 0))
         
         # shortcut
         self.set_general_binding(self)
@@ -188,7 +193,7 @@ class Tracker(Tk.Tk):
         label = Tk.Label(frame, text="0") # Total label
         label.grid(row=1, column=0)
         hist = Tk.Label(frame, text="") # History label
-        hist.grid(row=4, column=2 if is_main_window else 1, columnspan=100)
+        hist.grid(row=4, column=3 if is_main_window else 1, columnspan=100)
         container[""] = [0, label, hist, frame, layout, None] # the "" key is used for the total. this value contains: total counter, its label, the history label, the tab frame, the container frame, the detach button and the window if open
         # check for chest in the list
         if is_main_window:
@@ -224,14 +229,16 @@ class Tracker(Tk.Tk):
                 d[3].grid(row=3, column=i+1)
             container[l] = d
         self.make_button(frame, "0", lambda rn=rn: self.reset(rn), 4, 0, 1, "we", ("others", "reset", self.SMALL_THUMB))
-        if is_main_window: self.make_button(frame, "P", lambda rn=rn: self.detach(rn), 4, 1, 1, "we", ("others", "detach", self.SMALL_THUMB))
+        if is_main_window:
+            self.make_button(frame, "P", lambda rn=rn: self.detach(rn), 4, 1, 1, "we", ("others", "detach", self.SMALL_THUMB), width=50)
+            self.make_button(frame, "H", lambda rn=rn: self.show_history(rn), 4, 2, 1, "we", ("others", "history", self.SMALL_THUMB), width=50)
 
-    def make_button(self, parent : Tk.Tk, text : str, command : Optional[Callable], row : int, column : int, columnspan : int, sticky : str, asset_tuple : Optional[tuple] = None) -> Tk.Button: # function to make our buttons. Asset tuple is composed of 3 elements: folder, asset name and a size tuple (in pixels)
+    def make_button(self, parent : Tk.Tk, text : str, command : Optional[Callable], row : int, column : int, columnspan : int, sticky : str, asset_tuple : Optional[tuple] = None, width : Optional[int] = None, height : Optional[int] = None) -> Tk.Button: # function to make our buttons. Asset tuple is composed of 3 elements: folder, asset name and a size tuple (in pixels)
         if asset_tuple is not None:
             asset = self.load_asset("assets/" + asset_tuple[0] + "/" + asset_tuple[1].replace(".png", "") + ".png", asset_tuple[2])
         else:
             asset = None
-        button = Tk.Button(parent, image=asset, text=text, compound=Tk.LEFT, command=command)
+        button = Tk.Button(parent, image=asset, text=text, compound=Tk.LEFT, command=command, width=width, height=height)
         button.grid(row=row, column=column, columnspan=columnspan, sticky=sticky)
         return button
 
@@ -419,6 +426,7 @@ class Tracker(Tk.Tk):
         if self.stats_window is not None: self.stats_window.close()
         if self.import_window is not None: self.import_window.close()
         if self.editor_window is not None: self.editor_window.close()
+        if self.history_window is not None: self.history_window.close()
         for rname in self.raid_data:
             if self.raid_data[rname][""][5] is not None:
                 self.raid_data[rname][""][5].close()
@@ -453,6 +461,7 @@ class Tracker(Tk.Tk):
             if self.editor_window is not None:
                 self.editor_window.attributes('-topmost', True)
                 if self.editor_window.preview is not None: self.editor_window.preview.attributes('-topmost', True)
+            if self.history_window is not None: self.history_window.attributes('-topmost', True)
             for rname in self.raid_data:
                 if self.raid_data[rname][""][5] is not None:
                     self.raid_data[rname][""][5].attributes('-topmost', True)
@@ -464,6 +473,7 @@ class Tracker(Tk.Tk):
             if self.editor_window is not None:
                 self.editor_window.attributes('-topmost', False)
                 if self.editor_window.preview is not None: self.editor_window.preview.attributes('-topmost', False)
+            if self.history_window is not None: self.history_window.attributes('-topmost', False)
             for rname in self.raid_data:
                 if self.raid_data[rname][""][5] is not None:
                     self.raid_data[rname][""][5].attributes('-topmost', False)
@@ -477,6 +487,10 @@ class Tracker(Tk.Tk):
             self.push_notif("Notifications will appear here.")
         else:
             self.notification.grid_forget()
+
+    def toggle_backup(self) -> None: # toggle save backup
+        self.modified = True
+        self.settings["backup_save"] = self.backup_save.get()
 
     def push_notif(self, text : str) -> None: # edit the notification label and reset the counter
         self.notification.config(text=text)
@@ -547,6 +561,8 @@ class Tracker(Tk.Tk):
                         self.raid_data[rname][""][5].data[k][0] = self.raid_data[rname][k][0]
                 self.update_label(rname) # update the labels for this raid
                 if self.stats_window is not None: self.stats_window.update_data() # update stats window if open
+                if self.history_window is not None and rname == self.history_window.rname: # update history window is open
+                    self.history_window.update_history()
 
     def reset(self, rname : str) -> None: # raid name
         if messagebox.askquestion(title="Reset", message="Do you want to reset this tab?") == "yes": #ask for confirmation to avoid  accidental data reset
@@ -568,6 +584,16 @@ class Tracker(Tk.Tk):
                     self.raid_data[rname][""][5].setPosition(position[0], position[1])
             else:
                 self.raid_data[rname][""][5] = DetachedRaid(self, rname, position)
+
+    def show_history(self, rname : str) -> None: # open popup to show the history of the raid
+        if rname in self.history and rname in self.raid_data:
+            if self.history_window is None:
+                self.history_window = History(self, rname)
+            else:
+                self.history_window.destroy()
+                self.history_window = History(self, rname)
+        else:
+            messagebox.showerror("Error", "History not available for this raid")
 
     def update_label(self, rname : str) -> None: # update the labels of the tab content
         if rname in self.raid_data:
@@ -614,7 +640,6 @@ class Tracker(Tk.Tk):
                     v[3].config(text="{:.2f}%".format(min(100, 100*float(v[0])/chest_count)).replace('0%', '%').replace('.0%', '%'))
                 else:
                     v[3].config(text="0%")
-        
 
     def cmpVer(self, mver : str, tver : str) -> bool: # compare version strings, True if mver greater or equal, else False
         me = mver.split('.')
@@ -769,6 +794,9 @@ class Tracker(Tk.Tk):
             savedata = self.check_history(savedata)
             if not self.cmpVer(self.version, savedata["version"]):
                 errors.append("Your save data comes from a more recent version. It might causses issues")
+            if len(errors) == 0 and savedata.get("settings", {}).get("backup_save", 0):
+                try: shutil.copyfile("save.json", "save-backup.json")
+                except Exception as x: errors.append("Error while makine a save.json backup: " + str(x))
             return savedata, errors
         except Exception as e:
             print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
@@ -877,6 +905,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self) -> None: # display the changelog
         changelog = [
+            "1.51 - Added History window and Save Backup setting.",
             "1.50 - Added thousand separators for big numbers. Fixed some very minor UI issues.",
             "1.49 - Added raid thumbnails to stat screen.",
             "1.48 - The statistics window is now more detailed.",
@@ -885,8 +914,7 @@ class Tracker(Tk.Tk):
             "1.45 - Fixed a bug causing notifications to be removed too early.",
             "1.44 - Fixed the various raid buttons of the Layout Editor being binded to the wrong raid in some cases.",
             "1.43 - 'save.json' and 'assets/raids.json' are now backed up before updating.",
-            "1.42 - Fixed an issue in the auto-updater causing custom raids.json to be overwritten.",
-            "1.41 - Added the new Revans weapons. If you modified your 'raids.json', you have to add them manually."
+            "1.42 - Fixed an issue in the auto-updater causing custom raids.json to be overwritten."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
@@ -1458,6 +1486,77 @@ class PreviewLoot(Tk.Toplevel): # preview window
 
     def close(self) -> None: # called on close
         self.parent.preview = None
+        self.destroy()
+
+class History(Tk.Toplevel): # history window
+    MAX_LINE = 25
+
+    def __init__(self, parent : Editor, rname : str) -> None:
+        # window
+        self.parent = parent
+        self.rname = rname
+        Tk.Toplevel.__init__(self,parent)
+        self.title("History")
+        self.resizable(width=False, height=False) # not resizable
+        self.minsize(self.parent.MIN_WIDTH, self.parent.MIN_HEIGHT)
+        self.iconbitmap('assets/icon.ico')
+        self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
+        self.update_history()
+        if self.parent.settings.get("top_most", 0) == 1:
+            self.attributes('-topmost', True)
+
+    def update_history(self) -> None:
+        # cleanup
+        for child in self.winfo_children(): # clean current elements
+            child.destroy()
+        # top line
+        r = self.parent.raid_data[self.rname][""][4]
+        Tk.Label(self, text=r.get("text", "Raid") + " Raid", image=self.parent.load_asset("assets/tabs/" + r.get("raid_image", "").replace(".png", "") + ".png", self.parent.SMALL_THUMB), compound=Tk.LEFT).grid(row=0, column=0, sticky="w")
+        # get chest and total
+        chest = self.parent.got_chest.get(self.rname, "")
+        total = self.parent.raid_data[self.rname][chest][0]
+        if chest == "": chest = "raids"
+        else: chest += " chests"
+        # position on ui
+        line_index = 1
+        column = 0
+        # iterate over history
+        for k, v in self.parent.history[self.rname].items():
+            count = self.parent.raid_data[self.rname][k][0] # bar/sand count
+            if count > 0:
+                Tk.Label(self, text="Average: {:,}, Rate: {:.2f}%".format(total // count, 100*count/float(total)).replace('0%', '%').replace('.0%', '%'), image=self.parent.load_asset("assets/tabs/" + k.replace(".png", "") + ".png", self.parent.SMALL_THUMB), compound=Tk.LEFT).grid(row=line_index, column=column, sticky="w")
+                line_index += 1
+                if line_index == self.MAX_LINE:
+                    line_index == 0
+                    column += 1
+                prev = 0
+                for i in range(len(v)):
+                    if i >= count: continue
+                    value = v[i]
+                    if value == 0:
+                        prev = None
+                    else:
+                        try:
+                            diff = value - prev
+                            Tk.Label(self, text="Drop at {:,} {:} (+{:})".format(value, chest, diff)).grid(row=line_index, column=column, sticky="w")
+                        except:
+                            Tk.Label(self, text="Drop at {:,} {:}".format(value, chest)).grid(row=line_index, column=column, sticky="w")
+                        prev = value
+                        line_index += 1
+                        if line_index == self.MAX_LINE:
+                            line_index == 0
+                            column += 1
+            else:
+                Tk.Label(self, text="No Data", image=self.parent.load_asset("assets/tabs/" + k.replace(".png", "") + ".png", self.parent.SMALL_THUMB), compound=Tk.LEFT).grid(row=line_index, column=column, sticky="w")
+                line_index += 1
+                if line_index == self.MAX_LINE:
+                    line_index == 0
+                    column += 1
+        if line_index == 1 and column == 0:
+            Tk.Label(self, text="No History available").grid(row=line_index, column=column, sticky="w")
+
+    def close(self) -> None: # called on close
+        self.parent.history_window = None
         self.destroy()
 
 if __name__ == "__main__": # entry point

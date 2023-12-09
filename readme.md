@@ -67,7 +67,7 @@ If you have ideas that you want to implement or suggest, you can open a pull req
   
 ### Customization  
 The layout is fully editable.  
-Before starting, I recommend to backup `save.json` and `assets/raids.json`, in case you make a very big mistake.  
+Before starting, I recommend to copy/backup `save.json` and `assets/raids.json`, in case you make a very big mistake.  
 There are two ways to edit the `assets/raids.json` files:  
   
 - **The Easier Way:**  
