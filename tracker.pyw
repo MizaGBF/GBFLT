@@ -905,6 +905,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self) -> None: # display the changelog
         changelog = [
+            "1.52 - Fixed a bug and tweaked the UI of the History window.",
             "1.51 - Added History window and Save Backup setting.",
             "1.50 - Added thousand separators for big numbers. Fixed some very minor UI issues.",
             "1.49 - Added raid thumbnails to stat screen.",
@@ -913,8 +914,7 @@ class Tracker(Tk.Tk):
             "1.46 - Fixed keyboard navigation not working on tabs after clicking a tab.",
             "1.45 - Fixed a bug causing notifications to be removed too early.",
             "1.44 - Fixed the various raid buttons of the Layout Editor being binded to the wrong raid in some cases.",
-            "1.43 - 'save.json' and 'assets/raids.json' are now backed up before updating.",
-            "1.42 - Fixed an issue in the auto-updater causing custom raids.json to be overwritten."
+            "1.43 - 'save.json' and 'assets/raids.json' are now backed up before updating."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
@@ -1524,12 +1524,19 @@ class History(Tk.Toplevel): # history window
         for k, v in self.parent.history[self.rname].items():
             count = self.parent.raid_data[self.rname][k][0] # bar/sand count
             if count > 0:
-                Tk.Label(self, text="Average: {:,}, Rate: {:.2f}%".format(total // count, 100*count/float(total)).replace('0%', '%').replace('.0%', '%'), image=self.parent.load_asset("assets/tabs/" + k.replace(".png", "") + ".png", self.parent.SMALL_THUMB), compound=Tk.LEFT).grid(row=line_index, column=column, sticky="w")
-                line_index += 1
-                if line_index == self.MAX_LINE:
-                    line_index == 0
+                if line_index != 1:
+                    line_index = 1
                     column += 1
+                label = Tk.Label(self, image=self.parent.load_asset("assets/tabs/" + k.replace(".png", "") + ".png", self.parent.SMALL_THUMB), compound=Tk.LEFT)
+                label.grid(row=line_index, column=column, sticky="w")
+                line_index += 1
                 prev = 0
+                min_v = None
+                max_v = None
+                start = max(0, count - 30)
+                if start > 0:
+                    Tk.Label(self, text="(Last 30 drops)").grid(row=line_index, column=column, sticky="w")
+                    line_index += 1
                 for i in range(len(v)):
                     if i >= count: continue
                     value = v[i]
@@ -1538,20 +1545,25 @@ class History(Tk.Toplevel): # history window
                     else:
                         try:
                             diff = value - prev
-                            Tk.Label(self, text="Drop at {:,} {:} (+{:})".format(value, chest, diff)).grid(row=line_index, column=column, sticky="w")
+                            min_v = diff if min_v is None else min(min_v, diff)
+                            max_v = diff if max_v is None else max(max_v, diff)
+                            if i >= start: Tk.Label(self, text="At {:,} {:} (+{:})".format(value, chest, diff)).grid(row=line_index, column=column, sticky="w")
                         except:
-                            Tk.Label(self, text="Drop at {:,} {:}".format(value, chest)).grid(row=line_index, column=column, sticky="w")
+                            if i >= start: Tk.Label(self, text="At {:,} {:}".format(value, chest)).grid(row=line_index, column=column, sticky="w")
                         prev = value
                         line_index += 1
-                        if line_index == self.MAX_LINE:
-                            line_index == 0
-                            column += 1
+                text = "Rate: {:.2f}%".format(100*count/float(total)).replace('0%', '%').replace('.0%', '%')
+                if min_v is not None: text += ", Min: {:,}".format(min_v)
+                if max_v is not None: text += ", Max: {:,}".format(max_v)
+                try:
+                    if v[count-1] > 0:
+                        text += ", Avg: {:,}".format(v[count-1] // count)
+                except:
+                    pass
+                label.config(text=text)
             else:
                 Tk.Label(self, text="No Data", image=self.parent.load_asset("assets/tabs/" + k.replace(".png", "") + ".png", self.parent.SMALL_THUMB), compound=Tk.LEFT).grid(row=line_index, column=column, sticky="w")
                 line_index += 1
-                if line_index == self.MAX_LINE:
-                    line_index == 0
-                    column += 1
         if line_index == 1 and column == 0:
             Tk.Label(self, text="No History available").grid(row=line_index, column=column, sticky="w")
 
