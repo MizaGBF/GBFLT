@@ -27,6 +27,7 @@ class Tracker(Tk.Tk):
     MIN_HEIGHT = 150
     SMALL_THUMB = (20, 20)
     BIG_THUMB = (50, 50)
+    GITHUB = "https://github.com/MizaGBF/GBFLT"
 
     def __init__(self) -> None:
         Tk.Tk.__init__(self,None)
@@ -95,7 +96,7 @@ class Tracker(Tk.Tk):
         self.make_button(tab, "Export to Text", self.export_to_text, 4, 0, 3, "we", ("others", "export", self.SMALL_THUMB))
         self.make_button(tab, "What's New?   ", self.show_changelog, 5, 0, 3, "we", ("others", "new", self.SMALL_THUMB))
         self.make_button(tab, "Credits           ", self.show_credits, 6, 0, 3, "we", ("others", "credits", self.SMALL_THUMB))
-        self.make_button(tab, "Github Repository", self.github, 0, 3, 3, "we", ("others", "github", self.SMALL_THUMB))
+        self.make_button(tab, "Github Repository", self.github_repo, 0, 3, 3, "we", ("others", "github", self.SMALL_THUMB))
         self.make_button(tab, "Bug Report        ", self.github_issue, 1, 3, 3, "we", ("others", "bug", self.SMALL_THUMB))
         self.make_button(tab, "Check Updates   ", lambda : self.check_new_update(False), 2, 3, 3, "we", ("others", "update", self.SMALL_THUMB))
         self.make_button(tab, "Shortcut List       ", self.show_shortcut, 3, 3, 3, "we", ("others", "shortcut", self.SMALL_THUMB))
@@ -155,7 +156,7 @@ class Tracker(Tk.Tk):
         self.last_savedata_string = str(self.get_save_data()) # get current state of the save as a string
         self.after(60000, self.save_task)
 
-    def set_general_binding(self, widget : Tk.Tk, limit_to : Optional[list] = None) -> None: # set shortcut keys
+    def set_general_binding(self, widget : Tk.Tk, limit_to : Optional[list] = None) -> None: # set shortcut keys to given widget/window
         key_bindings = [
             ('t', self.key_toggle_topmost),
             ('s', self.key_toggle_stat),
@@ -660,7 +661,7 @@ class Tracker(Tk.Tk):
                 pass
             return
             # download latest
-            with urllib.request.urlopen("https://github.com/MizaGBF/GBFLT/archive/refs/heads/main.zip") as url:
+            with urllib.request.urlopen(self.GITHUB+"/archive/refs/heads/main.zip") as url:
                 data = url.read()
             # read
             with BytesIO(data) as zip_content:
@@ -855,15 +856,15 @@ class Tracker(Tk.Tk):
         if self.stats_window is not None: self.stats_window.lift()
         else: self.stats_window = StatScreen(self)
 
-    def github(self) -> None: # open the github repo
-        webbrowser.open("https://github.com/MizaGBF/GBFLT", new=2, autoraise=True)
+    def github_repo(self) -> None: # open the github repo
+        webbrowser.open(self.GITHUB, new=2, autoraise=True)
         self.push_notif("Link opened in your broswer.")
 
     def github_issue(self) -> None: # open the github repo on the issues page
-        webbrowser.open("https://github.com/MizaGBF/GBFLT/issues", new=2, autoraise=True)
+        webbrowser.open(self.GITHUB+"/issues", new=2, autoraise=True)
         self.push_notif("Link opened in your broswer.")
 
-    def show_shortcut(self) -> None:
+    def show_shortcut(self) -> None: # open shortcut list
         messagebox.showinfo("Keyboard Shortcuts", "- T: Toggle the Always on top settings.\n- S: Toggle the Statistics window.\n- L: Toggle the Light and Dark themes.\n- N: Toggle the Notification Bar.\n- E: Open the Layout Editor.\n- R: Restart the application.\n- U: Check for updates.\n- M: Memorize the currently opened Raid Popups positions.\n- O: Open the memorized Raid popups to their saved positions.\n- C: Close all opened Raid popups.\n- Page Up or Up: Go to the top tab on the left.\n- Page Down or Down: Go to the top tab on the right.\n- Left: Go to the raid on the left.\n- Right: Go to the raid on the right.\n- Shit+F1~F12: Set the current raid to the Function Key pressed.\n- F1~F12: Go to the raid associated to this Function key.")
 
     def show_favorite(self) -> None: # favorite list
@@ -889,8 +890,8 @@ class Tracker(Tk.Tk):
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
-    def show_credits(self) -> None:
-        messagebox.showinfo("Credits", "https://github.com/MizaGBF/GBFLT\nAuthor: Mizako\nContributors: Zell\nTesting: Slugi\n\nVisual Themes:\nhttps://github.com/rdbende/Azure-ttk-theme\nhttps://github.com/rdbende/Forest-ttk-theme")
+    def show_credits(self) -> None: # show credits
+        messagebox.showinfo("Credits", "https://github.com/MizaGBF/GBFLT\nAuthor:\n- Mizako\n\nContributors:\n- Zell (v1.6)\n\nTesting:\n- Slugi\n\nVisual Themes:\nhttps://github.com/rdbende/Azure-ttk-theme\nhttps://github.com/rdbende/Forest-ttk-theme")
 
     def export_to_text(self) -> None: # export data to text
         today = datetime.now()
@@ -939,7 +940,7 @@ class ImportDial(Tk.Toplevel):
             self.attributes('-topmost', True)
         
         Tk.Label(self, text="You can import some raid data from other similar trackers.").grid(row=0, column=0, columnspan=10, sticky="w")
-        Tk.Button(self, text="'Gold-Bar-Tracker'", command=lambda : self.import_data(0)).grid(row=1, column=0, columnspan=10, sticky="we")
+        Tk.Button(self, text="'Gold-Bar-Tracker'", command=lambda : self.import_data(0)).grid(row=1, column=0, columnspan=10, sticky="we") # only this one so far
         
         Tk.Label(self, text="Your tracker missing? Please notify us.").grid(row=10, column=0, columnspan=10, sticky="w")
 
@@ -1241,13 +1242,14 @@ class Editor(Tk.Toplevel): # editor window
     def update_layout(self, index : Optional[int] = None) -> None: # update the top and bottom frame. Provided index will be passed to update_select()
         self.update_select(index) # update bottom layout
         
+        # to avoid reconstructing the frame every time, we keep existing widgets and delete extra ones
         while len(self.tab_container) > len(self.layout):
             for w in self.tab_container[-1]: w.destroy()
             self.tab_container.pop()
             self.tab_text_var.pop()
             self.tab_text_var.pop()
         
-        for i, t in enumerate(self.layout): # add buttons for each existing tabs
+        for i, t in enumerate(self.layout): # for each tab
             if i == len(self.tab_container): # create fresh line and store in tab_container
                 self.tab_container.append([])
                 label = Tk.Label(self.top_frame, text="#"+str(i+1))
@@ -1299,7 +1301,8 @@ class Editor(Tk.Toplevel): # editor window
 
     def update_select(self, index : Optional[int] = None) -> None: # update only the bottom frame. Provided index will determine if a current tab is selected or not (if None)
         if index is not None:
-            while len(self.raid_container) > len(self.layout[index].get("raids", [])):
+            # same principle as update_layout, we made it to keep update fast and lightweight
+            while len(self.raid_container) > len(self.layout[index].get("raids", [])): # delete extras
                 for w in self.raid_container[-1]: w.destroy()
                 self.raid_container.pop()
                 self.raid_text_var.pop()
@@ -1312,7 +1315,7 @@ class Editor(Tk.Toplevel): # editor window
                 self.raid_header_add.config(command=lambda index=index: self.insert_raid(index))
             except:
                 pass
-            for i, r in enumerate(self.layout[index].get("raids", [])): # add buttons for each existing raids of the selected tab
+            for i, r in enumerate(self.layout[index].get("raids", [])): # for each raid
                 if i == len(self.raid_container): # create fresh line and store in raid_container
                     self.raid_container.append([])
                     label = Tk.Label(self.selected, text="#"+str(i+1))
@@ -1353,7 +1356,7 @@ class Editor(Tk.Toplevel): # editor window
                     self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.move_raid(index, i, 1), i+2, 11, 1, "w", ("others", "down", self.parent.SMALL_THUMB)))
                     if i == len(self.layout[index]["raids"]) - 1:  self.raid_container[-1][-1].grid_forget()
                     self.raid_container[-1].append(self.parent.make_button(self.selected, "", lambda index=index, i=i: self.delete_raid(index, i), i+2, 12, 1, "w", ("others", "del",self.parent.SMALL_THUMB)))
-                else:
+                else: # add new raid
                     self.raid_text_var[i*3].trace_remove("write", self.raid_text_var[i*3].trace_info()[0][1])
                     self.raid_text_var[i*3].set(r.get("text", ""))
                     self.raid_text_var[i*3].trace_add("write", lambda name, index, mode, sv=self.raid_text_var[i*3], idx=index, i=i: self.edit_entry(sv, i, idx, "text"))
@@ -1386,7 +1389,7 @@ class Editor(Tk.Toplevel): # editor window
             except: pass
             self.current_selected = None
 
-    def see_loot(self, index : str, i : int) -> None:
+    def see_loot(self, index : str, i : int) -> None: # preview button
         if self.preview is not None: self.preview.close()
         self.preview = PreviewLoot(self, self.layout[index]["raids"][i].get("raid_image", ""), self.layout[index]["raids"][i].get("loot", ""))
 
@@ -1421,6 +1424,7 @@ class PreviewLoot(Tk.Toplevel): # preview window
         Tk.Label(self, text="Total").grid(row=2, column=0)
         chest = None
         problems = []
+        # create window on the spot instead of reusing set_tab_content: it lets us check for problems and disable interactions at the cost of minimum copy paste
         for l in loot:
             if l in self.parent.parent.CHESTS:
                 if chest is None:
@@ -1444,7 +1448,7 @@ class PreviewLoot(Tk.Toplevel): # preview window
             Tk.Label(self, text="0%").grid(row=2, column=i+1)
             if chest is not None and l != chest: Tk.Label(self, text="0%").grid(row=3, column=i+1)
             llist.add(l)
-        if len(problems) > 0:
+        if len(problems) > 0: # if problems detected, add problem button
             self.parent.parent.make_button(self, "", lambda problems=problems : self.show_problems(problems), 4, 0, 1, "we", ("others", "warning", self.parent.parent.SMALL_THUMB))
         if self.parent.parent.settings.get("top_most", 0) == 1:
             self.attributes('-topmost', True)
