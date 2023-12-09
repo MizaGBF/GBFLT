@@ -1489,7 +1489,7 @@ class PreviewLoot(Tk.Toplevel): # preview window
         self.destroy()
 
 class History(Tk.Toplevel): # history window
-    MAX_LINE = 25
+    LIMIT = 30
 
     def __init__(self, parent : Editor, rname : str) -> None:
         # window
@@ -1533,9 +1533,9 @@ class History(Tk.Toplevel): # history window
                 prev = 0
                 min_v = None
                 max_v = None
-                start = max(0, count - 30)
+                start = max(0, count - self.LIMIT)
                 if start > 0:
-                    Tk.Label(self, text="(Last 30 drops)").grid(row=line_index, column=column, sticky="w")
+                    Tk.Label(self, text="(Last {} drops)".format(self.LIMIT)).grid(row=line_index, column=column, sticky="w")
                     line_index += 1
                 for i in range(len(v)):
                     if i >= count: continue
