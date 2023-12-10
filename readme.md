@@ -19,6 +19,7 @@
 * You only need [Python 3](https://www.python.org/downloads/) (version 3.10 or higher) installed.  
 * New to Github? Click the Green `Code` button at the top of this page, then "Download ZIP" to download this repository.  
 * Once downloaded, right click on the `.zip` file and extract the content. You can then delete the `.zip` file.  
+* (Optional) You can delete the `.github` folder if you only plan to have a normal usage of this application.  
 * Now, go inside the newly created folder and double-click on `tracker.pyw` to see if it works. If it doesn't, check the next section.
   
 ### Troubleshooting  
@@ -63,7 +64,14 @@ If it doesn't work or if you want to manually update:
   
 ### Support  
 Just drop a star on the top right corner of this page if you want to show your support.  
-If you have ideas that you want to implement or suggest, you can open a pull request for the former, and open an issue for the later.  
+If you have ideas that you want to implement or suggest, you can open a pull request for the former (see below) or open an issue for the later.  
+  
+### Pull Request  
+If you wish to implement yourself new features, you can.  
+I won't explain to you how to use Git to fork, make a pull request and so on.  
+Just know that I'll refuse the following:  
+* Changes requiring a third party dependency (I want to keep the installation process user friendly).  
+* Changes to the default `assets/raids.json` file, unless it's to add a recently released raid (But you can expect me to do it myself if I'm still active).  
   
 ### Customization  
 The layout is fully editable.  
@@ -112,7 +120,7 @@ If you want to add a visual theme, you have to modify the following:
 - Add your theme to `assets\themes\main.tcl` to redirect it to your TCL file.  
 - Edit `tracker.pyw` (line 25 on the current version) and add your theme to the rotation.  
   
-If you need to edit `save.json`, the file is structured this way (for version 1.29 at the time of this writing):
+If you need to edit `save.json`, the file is structured this way (for version `1.53` at the time of this writing):
 - An object containing:
     - "version" key and the version string of the tracker by which this file was generated.  
     - "last" key and the name of the last Raid modified.  
