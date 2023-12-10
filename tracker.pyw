@@ -10,6 +10,7 @@ import sys
 import zipfile
 from io import BytesIO
 import os
+import platform
 import shutil
 import copy
 from typing import Callable, Optional
@@ -62,6 +63,16 @@ class Tracker(Tk.Tk):
         layout, rerrors = self.load_raids()
         errors += rerrors
         errors += self.verify_layout(layout)
+        
+        # calculate windows position offset
+        try:
+            try: n = "/".join(platform.uname()) # use platform info as an unique identifier (sort of)
+            except: n = platform.system()+"/"+platform.platform()
+            if n != self.settings.get('machine', '') or 'offset' not in self.settings: # this way, we recalculate the offset if the user changed machine (as it might differ between windows/linux/etc... versions/themes)
+                self.settings['machine'] = n
+                self.settings['offset'] = OffsetTester(self).get_offset() # create a windows at position 100x100, update it, get its new position and retrieve the difference
+        except:
+            pass
         
         self.tab_tree = {} # used to memorize the tab structure, to set the active tab after loading
         self.top_tab = ttk.Notebook(self, takefocus=False)
@@ -193,7 +204,7 @@ class Tracker(Tk.Tk):
         label = Tk.Label(frame, text="0") # Total label
         label.grid(row=1, column=0)
         hist = Tk.Label(frame, text="") # History label
-        hist.grid(row=4, column=3 if is_main_window else 1, columnspan=100)
+        hist.grid(row=4, column=3 if is_main_window else 1, columnspan=100, sticky="w")
         container[""] = [0, label, hist, frame, layout, None] # the "" key is used for the total. this value contains: total counter, its label, the history label, the tab frame, the container frame, the detach button and the window if open
         # check for chest in the list
         if is_main_window:
@@ -228,8 +239,8 @@ class Tracker(Tk.Tk):
                 d.append(Tk.Label(frame, text="0%"))
                 d[3].grid(row=3, column=i+1)
             container[l] = d
-        self.make_button(frame, "0", lambda rn=rn: self.reset(rn), 4, 0, 1, "we", ("others", "reset", self.SMALL_THUMB))
         if is_main_window:
+            self.make_button(frame, "0", lambda rn=rn: self.reset(rn), 4, 0, 1, "we", ("others", "reset", self.SMALL_THUMB))
             self.make_button(frame, "P", lambda rn=rn: self.detach(rn), 4, 1, 1, "we", ("others", "detach", self.SMALL_THUMB), width=50)
             self.make_button(frame, "H", lambda rn=rn: self.show_history(rn), 4, 2, 1, "we", ("others", "history", self.SMALL_THUMB), width=50)
 
@@ -337,7 +348,7 @@ class Tracker(Tk.Tk):
         memorized = {}
         for rname in self.raid_data: # check opened windows and save their positions
             if self.raid_data[rname][""][5] is not None:
-                memorized[rname] = [self.raid_data[rname][""][5].winfo_rootx(), self.raid_data[rname][""][5].winfo_rooty()] # save the positions
+                memorized[rname] = [self.raid_data[rname][""][5].winfo_rootx()-self.settings.get('offset', [0, 0])[0], self.raid_data[rname][""][5].winfo_rooty()-self.settings.get('offset', [0, 0])[1]] # save the positions
         if len(memorized) > 0 and messagebox.askquestion(title="Memorize", message="Do you want to save the positions of currently opened Raid popups?\nYou'll then be able to open them anytime using the 'O' key.") == "yes":
             self.settings['memorized'] = memorized
             self.modified = True
@@ -417,7 +428,7 @@ class Tracker(Tk.Tk):
         if "detached" not in self.settings: self.settings['detached'] = {}
         for rname in self.raid_data: # check opened windows and save their positions
             if self.raid_data[rname][""][5] is not None:
-                self.settings["detached"][rname] = [self.raid_data[rname][""][5].winfo_rootx(), self.raid_data[rname][""][5].winfo_rooty()] # save their positions
+                self.settings["detached"][rname] = [self.raid_data[rname][""][5].winfo_rootx()-self.settings.get('offset', [0, 0])[0], self.raid_data[rname][""][5].winfo_rooty()-self.settings.get('offset', [0, 0])[1]] # save their positions
                 self.raid_data[rname][""][5].close()
                 self.modified = True
             elif rname in self.settings['detached']:
@@ -905,6 +916,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self) -> None: # display the changelog
         changelog = [
+            "1.53 - Removed Reset buttons on Raid Popups. Fixed Raid Popups moving slightly on reboot (To do so, the offset is calculated once on the app startup).",
             "1.52 - Fixed a bug and tweaked the UI of the History window.",
             "1.51 - Added History window and Save Backup setting.",
             "1.50 - Added thousand separators for big numbers. Fixed some very minor UI issues.",
@@ -913,8 +925,7 @@ class Tracker(Tk.Tk):
             "1.47 - Raid tabs size is reduced if more than six raids are present in the same category.",
             "1.46 - Fixed keyboard navigation not working on tabs after clicking a tab.",
             "1.45 - Fixed a bug causing notifications to be removed too early.",
-            "1.44 - Fixed the various raid buttons of the Layout Editor being binded to the wrong raid in some cases.",
-            "1.43 - 'save.json' and 'assets/raids.json' are now backed up before updating."
+            "1.44 - Fixed the various raid buttons of the Layout Editor being binded to the wrong raid in some cases."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
@@ -1039,17 +1050,36 @@ class DetachedRaid(Tk.Toplevel): # detached raid window
             self.data[k][0] = self.parent.raid_data[self.rname][k][0]
         self.parent.update_label_sub(self.rname, self.data) # update the window
         self.parent.set_general_binding(self, ["t", "s", "l", "n", "m", "o", "c"])
+        self.init_pos = None
         if position is not None: # set position if given
             self.setPosition(position[0], position[1])
         self.parent.modified = True
 
     def setPosition(self, x : int, y : int) -> None: # set window position
         ms = self.maxsize()
-        self.geometry('+{}+{}'.format(min(max(x, 0), ms[0]-240), min(max(y, 0), ms[1]-150))) # stay in screen bound
+        self.geometry('+{}+{}'.format(min(max(x, 0), ms[0]-self.parent.MIN_WIDTH), min(max(y, 0), ms[1]-self.parent.MIN_HEIGHT))) # stay in screen bound
+        self.init_pos = (min(max(x, 0), ms[0]-self.parent.MIN_WIDTH), min(max(y, 0), ms[1]-self.parent.MIN_HEIGHT))
 
     def close(self) -> None:
         self.parent.raid_data[self.rname][""][5] = None
         self.destroy()
+
+class OffsetTester(Tk.Toplevel): # used to calculate windows offset on machine (check inside Tracker.__init__() for more details)
+    def __init__(self, parent : Tracker) -> None:
+        # create a simple windows
+        self.parent = parent
+        Tk.Toplevel.__init__(self,parent)
+        self.title("Tester")
+        self.resizable(width=False, height=False)
+        self.minsize(self.parent.MIN_WIDTH, self.parent.MIN_HEIGHT)
+        # set position to 100x100
+        self.geometry('+100+100')
+
+    def get_offset(self) -> list:
+        self.update() # update once
+        offset = [self.winfo_rootx()-100, self.winfo_rooty()-100] # get difference from initial position
+        self.destroy() # destroy
+        return offset  # return the values
 
 class StatScreen(Tk.Toplevel): # stats window
     ITEM_COLUMN = 5
@@ -1249,13 +1279,11 @@ class Editor(Tk.Toplevel): # editor window
             self.update_select(index)
 
     def move_raid(self, index : int, i : int, change : int) -> None: # move a raid at index i, in tab index, by change value (assume the resulting position is valid)
-        print(type(index))
         self.layout[index]["raids"][i], self.layout[index]["raids"][i+change] = self.layout[index]["raids"][i+change], self.layout[index]["raids"][i]
         # update the bottom layout
         self.update_select(index)
 
     def move_raid_to(self, index : int, i : int) -> None: # move a raid at index i from tab index to a tab selected by the user
-        print(type(index))
         target = simpledialog.askstring("Move Raid", "Move this raid to the end of which Tab? (Input its number)")
         if target is None: return
         try:
