@@ -567,13 +567,7 @@ class Tracker(Tk.Tk):
                     self.raid_data[rname][""][0] = max(0, self.raid_data[rname][""][0] - 1)
                 # done
                 self.modified = True
-                if self.raid_data[rname][""][5] is not None: # update detached window if it exists
-                    for k in self.raid_data[rname]:
-                        self.raid_data[rname][""][5].data[k][0] = self.raid_data[rname][k][0]
-                self.update_label(rname) # update the labels for this raid
-                if self.stats_window is not None: self.stats_window.update_data() # update stats window if open
-                if self.history_window is not None and rname == self.history_window.rname: # update history window is open
-                    self.history_window.update_history()
+                self.update_raid_ui(rname)
 
     def reset(self, rname : str) -> None: # raid name
         if messagebox.askquestion(title="Reset", message="Do you want to reset this tab?") == "yes": #ask for confirmation to avoid  accidental data reset
@@ -581,11 +575,18 @@ class Tracker(Tk.Tk):
                 self.last_tab = rname
                 for k in self.raid_data[rname]:
                     self.raid_data[rname][k][0] = 0
-                try: del self.history[rname]
-                except: pass
                 self.modified = True
-                self.update_label(rname)
+                self.update_raid_ui(rname)
                 self.push_notif("Raid '{}' has been reset.".format(rname))
+
+    def update_raid_ui(self, rname : str) -> None: # called by count() and reset()
+        if self.raid_data[rname][""][5] is not None: # update detached window if it exists
+            for k in self.raid_data[rname]:
+                self.raid_data[rname][""][5].data[k][0] = self.raid_data[rname][k][0]
+        self.update_label(rname) # update the labels for this raid
+        if self.stats_window is not None: self.stats_window.update_data() # update stats window if open
+        if self.history_window is not None and rname == self.history_window.rname: # update history window is open
+            self.history_window.update_history()
 
     def detach(self, rname : str, position : Optional[list] = None) -> None: # open popup for specified raid name
         if rname in self.raid_data:
@@ -597,7 +598,7 @@ class Tracker(Tk.Tk):
                 self.raid_data[rname][""][5] = DetachedRaid(self, rname, position)
 
     def show_history(self, rname : str) -> None: # open popup to show the history of the raid
-        if rname in self.history and rname in self.raid_data:
+        if rname in self.raid_data:
             if self.history_window is None:
                 self.history_window = History(self, rname)
             else:
@@ -916,6 +917,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self) -> None: # display the changelog
         changelog = [
+            "1.54 - Fixed the Popup and Statistics not being updated upon using the Reset button, and the History crashing if open.",
             "1.53 - Removed Reset buttons on Raid Popups. Fixed Raid Popups moving slightly on reboot (To do so, the offset is calculated once on the app startup).",
             "1.52 - Fixed a bug and tweaked the UI of the History window.",
             "1.51 - Added History window and Save Backup setting.",
@@ -924,8 +926,7 @@ class Tracker(Tk.Tk):
             "1.48 - The statistics window is now more detailed.",
             "1.47 - Raid tabs size is reduced if more than six raids are present in the same category.",
             "1.46 - Fixed keyboard navigation not working on tabs after clicking a tab.",
-            "1.45 - Fixed a bug causing notifications to be removed too early.",
-            "1.44 - Fixed the various raid buttons of the Layout Editor being binded to the wrong raid in some cases."
+            "1.45 - Fixed a bug causing notifications to be removed too early."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
@@ -1549,7 +1550,7 @@ class History(Tk.Toplevel): # history window
         line_index = 1
         column = 0
         # iterate over history
-        for k, v in self.parent.history[self.rname].items():
+        for k, v in self.parent.history.get(self.rname, {}).items():
             count = self.parent.raid_data[self.rname][k][0] # bar/sand count
             if count > 0:
                 if line_index != 1:
