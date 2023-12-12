@@ -696,7 +696,6 @@ class Tracker(Tk.Tk):
                     f.write(data)
             except:
                 pass
-            return
             # download latest
             with urllib.request.urlopen(self.GITHUB+"/archive/refs/heads/main.zip") as url:
                 data = url.read()
@@ -917,6 +916,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self) -> None: # display the changelog
         changelog = [
+            "1.55 - Fixed the Auto Update doing nothing.",
             "1.54 - Fixed the Popup and Statistics not being updated upon using the Reset button, and the History crashing if open.",
             "1.53 - Removed Reset buttons on Raid Popups. Fixed Raid Popups moving slightly on reboot (To do so, the offset is calculated once on the app startup).",
             "1.52 - Fixed a bug and tweaked the UI of the History window.",
@@ -925,8 +925,7 @@ class Tracker(Tk.Tk):
             "1.49 - Added raid thumbnails to stat screen.",
             "1.48 - The statistics window is now more detailed.",
             "1.47 - Raid tabs size is reduced if more than six raids are present in the same category.",
-            "1.46 - Fixed keyboard navigation not working on tabs after clicking a tab.",
-            "1.45 - Fixed a bug causing notifications to be removed too early."
+            "1.46 - Fixed keyboard navigation not working on tabs after clicking a tab."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
