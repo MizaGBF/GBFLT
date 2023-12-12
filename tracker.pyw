@@ -682,20 +682,10 @@ class Tracker(Tk.Tk):
     def auto_update(self) -> None:
         try:
             # backup
-            try:
-                with open('assets/raids.json', mode='rb') as f:
-                    data = f.read()
-                with open('assets/raids-backup.json', mode='wb') as f:
-                    f.write(data)
-            except:
-                pass
-            try:
-                with open('save.json', mode='rb') as f:
-                    data = f.read()
-                with open('save-backup.json', mode='wb') as f:
-                    f.write(data)
-            except:
-                pass
+            try: shutil.copyfile("assets/raids.json", "assets/raids-backup.json")
+            except: pass
+            try: shutil.copyfile("save.json", "save-backup.json")
+            except: pass
             # download latest
             with urllib.request.urlopen(self.GITHUB+"/archive/refs/heads/main.zip") as url:
                 data = url.read()
