@@ -666,7 +666,7 @@ class Tracker(Tk.Tk):
             with urllib.request.urlopen("https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/manifest.json") as url:
                 data = json.loads(url.read().decode("utf-8"))
             if "version" in data and self.version != "0.0" and not self.cmpVer(self.version, data["version"]):
-                if messagebox.askquestion(title="Update", message="An update is available.\nCurrent version: {}\nNew Version: {}\nDo you want to download and install?\n- 'save.json' and 'assets/raids.json' (if modified) will be kept intact.\n- Other files will be overwritten.".format(self.version, data["version"])) == "yes":
+                if messagebox.askquestion(title="Update", message="An update is available.\nCurrent version: {}\nNew Version: {}\nDo you want to download and install?\n- 'save.json' and 'assets/raids.json' (if modified) will be kept intact and be backed up.\n- Other files will be overwritten.".format(self.version, data["version"])) == "yes":
                     if self.check_python(data.get("python", "3.10")) is False:
                         if messagebox.askquestion("Outdated Python", "Your python version is v{}.{}.\nAt least Python v{} is recommended.\nUninstall python and install a more recent version.\nOpen the download page?".format(sys.version_info.major, sys.version_info.minor, data.get("python", "3.10"))) == "yes":
                             webbrowser.open("https://www.python.org/downloads/", new=2, autoraise=True)
