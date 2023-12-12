@@ -7,10 +7,11 @@
 * No third-party dependencies required.  
 * No Executable. You can even open and modify the application in a notepad.  
 * Light and Dark themes based on the [Azure TTK Theme](https://github.com/rdbende/Azure-ttk-theme) and the [Forest TTK Theme](https://github.com/rdbende/Forest-ttk-theme).  
-* Customizable layout.  
-* Keyboard shortcuts.  
-* Multi-Window support.  
+* Customizable Raid and Loot layout.  
+* Keyboard shortcuts for Navigation, Utility and more.  
+* Raid Tabs can be popped up.  
 * Global statistics.  
+* Gold Brick and Eternity Sand history.  
 * Auto updater.  
 * and more...  
 ![Tracker Preview 2](https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/preview2.png)  
