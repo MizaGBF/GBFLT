@@ -31,9 +31,12 @@ class Tracker(Tk.Tk):
     BIG_THUMB = (50, 50)
     GITHUB = "https://github.com/MizaGBF/GBFLT"
 
-    def __init__(self) -> None:
+    def __init__(self, tracker_directory : str = "") -> None: # set the directory to tracker.pyw directory if imported as an external module
         Tk.Tk.__init__(self,None)
         self.parent = None
+        self.tracker_directory = tracker_directory # to use if the tracker is imported as a module
+        if self.tracker_directory != "" and not self.tracker_directory.endswith('/') and not self.tracker_directory.endswith('\\'):
+            self.tracker_directory += "/"
         self.version = "0.0"
         self.python = "3.10"
         self.og_raidlayout = True # set to False if the user has modified raids.json
@@ -104,14 +107,16 @@ class Tracker(Tk.Tk):
         self.top_tab.tab(tab, image=self.load_asset("assets/others/settings.png", self.SMALL_THUMB), compound=Tk.LEFT)
         self.make_button(tab, "Toggle Theme", self.toggle_theme, 0, 0, 3, "we", ("others", "theme", self.SMALL_THUMB))
         self.make_button(tab, "Layout Editor  ", self.open_layout_editor, 1, 0, 3, "we", ("others", "layout", self.SMALL_THUMB))
-        self.make_button(tab, "Restart the App", self.restart, 2, 0, 3, "we", ("others", "restart", self.SMALL_THUMB))
+        b = self.make_button(tab, "Restart the App", self.restart, 2, 0, 3, "we", ("others", "restart", self.SMALL_THUMB))
+        if __name__ != "__main__": b.configure(state='disabled')
         self.make_button(tab, "Open Statistics", self.stats, 3, 0, 3, "we", ("others", "stats", self.SMALL_THUMB))
         self.make_button(tab, "Export to Text", self.export_to_text, 4, 0, 3, "we", ("others", "export", self.SMALL_THUMB))
         self.make_button(tab, "What's New?   ", self.show_changelog, 5, 0, 3, "we", ("others", "new", self.SMALL_THUMB))
         self.make_button(tab, "Credits           ", self.show_credits, 6, 0, 3, "we", ("others", "credits", self.SMALL_THUMB))
         self.make_button(tab, "Github Repository", self.github_repo, 0, 3, 3, "we", ("others", "github", self.SMALL_THUMB))
         self.make_button(tab, "Bug Report        ", self.github_issue, 1, 3, 3, "we", ("others", "bug", self.SMALL_THUMB))
-        self.make_button(tab, "Check Updates   ", lambda : self.check_new_update(False), 2, 3, 3, "we", ("others", "update", self.SMALL_THUMB))
+        b = self.make_button(tab, "Check Updates   ", lambda : self.check_new_update(False), 2, 3, 3, "we", ("others", "update", self.SMALL_THUMB))
+        if __name__ != "__main__": b.configure(state='disabled')
         self.make_button(tab, "Shortcut List       ", self.show_shortcut, 3, 3, 3, "we", ("others", "shortcut", self.SMALL_THUMB))
         self.make_button(tab, "Favorited           ", self.show_favorite, 4, 3, 3, "we", ("others", "favorite", self.SMALL_THUMB))
         self.make_button(tab, "Import from        ", self.import_data, 5, 3, 3, "we", ("others", "import", self.SMALL_THUMB))
@@ -256,7 +261,7 @@ class Tracker(Tk.Tk):
     def load_asset(self, path : str, size : tuple = None) -> Optional[PhotoImage]: # load an image file (if not loaded) and return it. If error/not found, return None or an empty image of specified size
         try:
             if path not in self.assets:
-                self.assets[path] = PhotoImage(file=path)
+                self.assets[path] = PhotoImage(file=self.tracker_directory+path)
             return self.assets[path]
         except:
             if size is None:
@@ -446,10 +451,10 @@ class Tracker(Tk.Tk):
     def load_raids(self) -> tuple: # load raids.json
         errors = []
         try:
-            with open('assets/raids.json', mode='r', encoding='utf-8') as f:
+            with open(self.tracker_directory + 'assets/raids.json', mode='r', encoding='utf-8') as f:
                 data = json.load(f)
             if '-debug_raid' in sys.argv: # used to update DEFAULT_LAYOUT
-                with open('debug_raid.txt', mode='w', encoding='utf-8') as g:
+                with open(self.tracker_directory + 'debug_raid.txt', mode='w', encoding='utf-8') as g:
                     g.write(str(data))
                     print('debug_raid.txt created')
             self.og_raidlayout = (str(data) == self.DEFAULT_LAYOUT)
@@ -662,6 +667,7 @@ class Tracker(Tk.Tk):
         return True
 
     def check_new_update(self, silent : bool = True) -> None: # request the manifest file on github and compare the versions
+        if __name__ != "__main__": return
         try:
             with urllib.request.urlopen("https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/manifest.json") as url:
                 data = json.loads(url.read().decode("utf-8"))
@@ -707,19 +713,19 @@ class Tracker(Tk.Tk):
                         if ".git" in file: continue
                         if file.split("/")[-1] in ["raids.json", "save.json"] or file.endswith("/"): continue
                         path = "/".join(file.split('/')[1:])
-                        with open(path, mode="wb") as f:
+                        with open(self.tracker_directory+path, mode="wb") as f:
                             f.write(zip_ref.read(file))
                     # update raids.json
                     if self.og_raidlayout: # if unmodified
                         for file in file_list:
                             if file.endswith("raids.json"):
                                 path = "/".join(file.split('/')[1:])
-                                with open(path, mode="wb") as f:
+                                with open(self.tracker_directory+path, mode="wb") as f:
                                     f.write(zip_ref.read(file))
                                 break
                     else:
                         try:
-                            with open('assets/raids.json', mode='r', encoding='utf-8') as f:
+                            with open(self.tracker_directory+'assets/raids.json', mode='r', encoding='utf-8') as f:
                                 old = json.load(f)
                             # list known raids
                             changes = ""
@@ -755,7 +761,7 @@ class Tracker(Tk.Tk):
                                         if changes != "" and messagebox.askquestion(title="Update", message="Some differences have been detected between your 'assets/raids.json' and the one from the latest version:\n" + changes + "\nDo you want to apply those differences to your 'assets/raids.json'?") == "yes":
                                             try:
                                                 json.dumps(str(old)) # check for validity
-                                                with open('assets/raids.json', mode='w', encoding='utf-8') as f:
+                                                with open(self.tracker_directory+'assets/raids.json', mode='w', encoding='utf-8') as f:
                                                     json.dump(old, f, indent=4, ensure_ascii=False)
                                                 messagebox.showinfo("Update", "'assets/raids.json' updated.\nUse the Layout Editor to make further modifications.")
                                             except Exception as ee:
@@ -767,7 +773,7 @@ class Tracker(Tk.Tk):
                                 for file in file_list:
                                     if file.endswith("raids.json"):
                                         new = json.loads(zip_ref.read(file).decode('utf-8'))
-                                        with open('assets/raids.json', mode='w', encoding='utf-8') as f:
+                                        with open(self.tracker_directory+'assets/raids.json', mode='w', encoding='utf-8') as f:
                                             json.dump(new, f, indent=4, ensure_ascii=False)
                                         break
             messagebox.showinfo("Update", "Update successful.\nThe application will now restart.\nIf you need to, you'll find backups of 'save.json' and 'assets/raids.json' near them.")
@@ -778,7 +784,7 @@ class Tracker(Tk.Tk):
 
     def load_manifest(self) -> list: # load data from manifest.json (only the version number for now)
         try:
-            with open("assets/manifest.json", mode="r", encoding="utf-8") as f:
+            with open(self.tracker_directory+"assets/manifest.json", mode="r", encoding="utf-8") as f:
                 data = json.load(f)
                 self.version = data["version"]
                 self.python = data["python"]
@@ -790,7 +796,7 @@ class Tracker(Tk.Tk):
     def load_savedata(self) -> tuple: # load save.data, return a tuple of the savedata (None if error) and an error list
         errors = []
         try:
-            with open("save.json", mode="r", encoding="utf-8") as f:
+            with open(self.tracker_directory+"save.json", mode="r", encoding="utf-8") as f:
                 savedata = json.load(f)
             savedata = self.check_history(savedata)
             if not self.cmpVer(self.version, savedata["version"]):
@@ -854,7 +860,7 @@ class Tracker(Tk.Tk):
             if savedata_string != self.last_savedata_string:
                 self.last_savedata_string = savedata_string
                 try:
-                    with open("save.json", mode="w", encoding="utf-8") as f:
+                    with open(self.tracker_directory+"save.json", mode="w", encoding="utf-8") as f:
                         json.dump(savedata, f)
                     self.push_notif("Changes have been saved.")
                 except Exception as e:
@@ -874,6 +880,7 @@ class Tracker(Tk.Tk):
         else: self.editor_window = Editor(self)
 
     def restart(self) -> None: # retsart the app (used to check layout changes)
+        if __name__ != "__main__": return
         try:
             self.save()
             subprocess.Popen([sys.executable, sys.argv[0]])
@@ -949,7 +956,7 @@ class Tracker(Tk.Tk):
                 if add != "":
                     report += "Drop History:\r\n" + add
             report += "\r\n"
-        with open("drop_export_{}.txt".format(today.strftime("%m-%d-%Y_%H-%M-%S.%f")), mode="w", encoding="utf-8") as f:
+        with open(self.tracker_directory+"drop_export_{}.txt".format(today.strftime("%m-%d-%Y_%H-%M-%S.%f")), mode="w", encoding="utf-8") as f:
             f.write(report)
         messagebox.showinfo("Info", "Data exported to: drop_export_{}.txt".format(today.strftime("%m-%d-%Y_%H-%M-%S.%f")))
 
@@ -1198,7 +1205,7 @@ class Editor(Tk.Toplevel): # editor window
 
     def load_raids(self) -> list: # load raids.json
         try:
-            with open('assets/raids.json', mode='r', encoding='utf-8') as f:
+            with open(self.tracker_directory+'assets/raids.json', mode='r', encoding='utf-8') as f:
                 return json.load(f)
         except:
             return []
@@ -1446,14 +1453,16 @@ class Editor(Tk.Toplevel): # editor window
             messagebox.showerror("Editor -Error", "Errors are present in the layout:\n"+"\n".join(errors))
             return False
         try:
-            with open("assets/raids.json", mode="w", encoding="utf-8") as f:
+            with open(self.tracker_directory+"assets/raids.json", mode="w", encoding="utf-8") as f:
                 json.dump(self.layout, f, indent=4, ensure_ascii=False)
             self.layout_string = str(self.layout)
-            if messagebox.askquestion(title="Editor -Success", message="'raids.json' updated with success.\nDo you want to restart the app now?\nNote: If you removed or renamed a raid, its data might be deleted from 'save.json'.") == "yes":
+            if __name__ != "__main__":
+                messagebox.showinfo("Editor ", "'raids.json' updated with success.\nA restart will be needed to see the changes.")
+            elif messagebox.askquestion(title="Editor -Success", message="'raids.json' updated with success.\nDo you want to restart the app now?\nNote: If you removed or renamed a raid, its data might be deleted from 'save.json'.") == "yes":
                 self.parent.restart()
             return True
         except Exception as e:
-            messagebox.showerror("Editor -Error", "An error occured while saving:\n"+str(e))
+            messagebox.showerror("Editor - Error", "An error occured while saving:\n"+str(e))
             return False
 
 class PreviewLoot(Tk.Toplevel): # preview window
