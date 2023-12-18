@@ -906,6 +906,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self) -> None: # display the changelog
         changelog = [
+            "1.56 - Added support for 'evolite', 'sunlight' and 'shard' drops. Interface icons have been prettied up.",
             "1.55 - Fixed the Auto Update doing nothing.",
             "1.54 - Fixed the Popup and Statistics not being updated upon using the Reset button, and the History crashing if open.",
             "1.53 - Removed Reset buttons on Raid Popups. Fixed Raid Popups moving slightly on reboot (To do so, the offset is calculated once on the app startup).",
