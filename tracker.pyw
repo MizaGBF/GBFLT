@@ -688,9 +688,9 @@ class Tracker(Tk.Tk):
     def auto_update(self) -> None:
         try:
             # backup
-            try: shutil.copyfile("assets/raids.json", "assets/raids-backup.json")
+            try: shutil.copyfile(self.tracker_directory+"assets/raids.json", self.tracker_directory+"assets/raids-backup.json")
             except: pass
-            try: shutil.copyfile("save.json", "save-backup.json")
+            try: shutil.copyfile(self.tracker_directory+"save.json", self.tracker_directory+"save-backup.json")
             except: pass
             # download latest
             with urllib.request.urlopen(self.GITHUB+"/archive/refs/heads/main.zip") as url:
@@ -707,7 +707,7 @@ class Tracker(Tk.Tk):
                     # make folders (if missing)
                     for path in folders:
                         if path == "": continue
-                        os.makedirs(os.path.dirname(path if path.endswith("/") else path+"/"), exist_ok=True)
+                        os.makedirs(os.path.dirname(self.tracker_directory+(path if path.endswith("/") else path+"/")), exist_ok=True)
                     # write files
                     for file in file_list:
                         if ".git" in file: continue
@@ -802,7 +802,7 @@ class Tracker(Tk.Tk):
             if not self.cmpVer(self.version, savedata["version"]):
                 errors.append("Your save data comes from a more recent version. It might causses issues")
             if len(errors) == 0 and savedata.get("settings", {}).get("backup_save", 0):
-                try: shutil.copyfile("save.json", "save-backup.json")
+                try: shutil.copyfile(self.tracker_directory+"save.json", self.tracker_directory+"save-backup.json")
                 except Exception as x: errors.append("Error while makine a save.json backup: " + str(x))
             return savedata, errors
         except Exception as e:
@@ -1550,28 +1550,28 @@ class History(Tk.Toplevel): # history window
         column = 0
         # iterate over history
         for k, v in self.parent.history.get(self.rname, {}).items():
-            count = self.parent.raid_data[self.rname][k][0] # bar/sand count
-            if count > 0:
-                if line_index != 1:
+            count = self.parent.raid_data[self.rname][k][0] # rare item count
+            if count > 0: # if there is something
+                if line_index != 1: # switch to next column if we already did one
                     line_index = 1
                     column += 1
-                label = Tk.Label(self, image=self.parent.load_asset("assets/tabs/" + k.replace(".png", "") + ".png", self.parent.SMALL_THUMB), compound=Tk.LEFT)
+                label = Tk.Label(self, image=self.parent.load_asset("assets/tabs/" + k.replace(".png", "") + ".png", self.parent.SMALL_THUMB), compound=Tk.LEFT) # add item image
                 label.grid(row=line_index, column=column, sticky="w")
                 line_index += 1
                 prev = 0
                 min_v = None
                 max_v = None
-                start = max(0, count - self.LIMIT)
-                if start > 0:
+                start = max(0, count - self.LIMIT) # limit to last self.LIMIT entries
+                if start > 0: # add mention if limited
                     Tk.Label(self, text="(Last {} drops)".format(self.LIMIT)).grid(row=line_index, column=column, sticky="w")
                     line_index += 1
-                for i in range(len(v)):
+                for i in range(len(v)): # iterate over entries
                     if i >= count: continue
                     value = v[i]
-                    if value == 0:
+                    if value == 0: # unknown entry
                         prev = None
                     else:
-                        try:
+                        try: # keep track of max, min, difference (in case of errors, it will be skipped)
                             diff = value - prev
                             min_v = diff if min_v is None else min(min_v, diff)
                             max_v = diff if max_v is None else max(max_v, diff)
@@ -1580,6 +1580,7 @@ class History(Tk.Toplevel): # history window
                             if i >= start: Tk.Label(self, text="At {:,} {:}".format(value, chest)).grid(row=line_index, column=column, sticky="w")
                         prev = value
                         line_index += 1
+                # update stat label
                 text = "Rate: {:.2f}%".format(100*count/float(total)).replace('0%', '%').replace('.0%', '%')
                 if min_v is not None: text += ", Min: {:,}".format(min_v)
                 if max_v is not None: text += ", Max: {:,}".format(max_v)
@@ -1589,7 +1590,7 @@ class History(Tk.Toplevel): # history window
                 except:
                     pass
                 label.config(text=text)
-            else:
+            else: # no data scenario
                 Tk.Label(self, text="No Data", image=self.parent.load_asset("assets/tabs/" + k.replace(".png", "") + ".png", self.parent.SMALL_THUMB), compound=Tk.LEFT).grid(row=line_index, column=column, sticky="w")
                 line_index += 1
         if line_index == 1 and column == 0:
