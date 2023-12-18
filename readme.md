@@ -132,3 +132,8 @@ If you need to edit `save.json`, the file is structured this way (for version `1
     - "favorites" key and a list of twelve elements (one for each function key on a keyboard, up to F12 included). Elements are either the name of a raid associated to the function key, or `null` if not associated.  
     - Every raid names as keys with an object as a value, containing the following:  
         - An item name and its associated integer. If the item name is an empty string, it matches the raid button instead. The integer is the number of times that the item dropped or the raid has been beaten.  
+  
+If you want to import the tracker as a python module in one of your project, know the following:  
+- You must pass the path (absolute or relative) to the GBFLT folder, to the `Tracker` instance, via the `tracker_directory` parameter.  
+- You can also set a parent to the `Tracker` instance, if you want to put it inside another Tkinter application. Such scenario is untested and might require some bug fixes.  
+  

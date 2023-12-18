@@ -31,9 +31,9 @@ class Tracker(Tk.Tk):
     BIG_THUMB = (50, 50)
     GITHUB = "https://github.com/MizaGBF/GBFLT"
 
-    def __init__(self, tracker_directory : str = "") -> None: # set the directory to tracker.pyw directory if imported as an external module
-        Tk.Tk.__init__(self,None)
-        self.parent = None
+    def __init__(self, parent : Optional[Tk.Tk] = None, tracker_directory : Optional[str] = "") -> None: # set the directory to tracker.pyw directory if imported as an external module
+        Tk.Tk.__init__(self,parent)
+        self.parent = parent
         self.tracker_directory = tracker_directory # to use if the tracker is imported as a module
         if self.tracker_directory != "" and not self.tracker_directory.endswith('/') and not self.tracker_directory.endswith('\\'):
             self.tracker_directory += "/"
