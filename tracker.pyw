@@ -35,6 +35,8 @@ class Tracker(Tk.Tk):
         Tk.Tk.__init__(self,parent)
         self.parent = parent
         self.tracker_directory = tracker_directory # to use if the tracker is imported as a module
+        if __name__ == "__main__" and self.tracker_directory == "":
+            self.tracker_directory = os.path.dirname(os.path.abspath(sys.argv[0]))
         if self.tracker_directory != "" and not self.tracker_directory.endswith('/') and not self.tracker_directory.endswith('\\'):
             self.tracker_directory += "/"
         self.version = "0.0"
@@ -50,10 +52,10 @@ class Tracker(Tk.Tk):
         self.favorites = [] if savedata is None else savedata.get("favorites", [])
         self.history = {} if savedata is None else savedata.get("history", {})
         self.settings = {} if savedata is None else savedata.get("settings", {})
-        self.call('source', 'assets/themes/main.tcl')
+        self.call('source', self.tracker_directory+'assets/themes/main.tcl')
         self.call("set_theme", self.settings.get("theme", self.THEME[0]))
         self.title("GBF Loot Tracker v" + self.version)
-        self.iconbitmap('assets/icon.ico')
+        self.iconbitmap(self.tracker_directory+'assets/icon.ico')
         self.resizable(width=False, height=False) # not resizable
         self.minsize(self.MIN_WIDTH, self.MIN_HEIGHT)
         self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
@@ -913,7 +915,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self) -> None: # display the changelog
         changelog = [
-            "1.56 - Added support for 'evolite', 'sunlight' and 'shard' drops. Interface icons have been prettied up.",
+            "1.56 - Added support for 'evolite', 'sunlight' and 'shard' drops. Interface icons have been prettied up. Tracker can now be started from the command line from another folder.",
             "1.55 - Fixed the Auto Update doing nothing.",
             "1.54 - Fixed the Popup and Statistics not being updated upon using the Reset button, and the History crashing if open.",
             "1.53 - Removed Reset buttons on Raid Popups. Fixed Raid Popups moving slightly on reboot (To do so, the offset is calculated once on the app startup).",
@@ -972,7 +974,7 @@ class ImportDial(Tk.Toplevel):
         self.title("GBF Loot Tracker - Data Import")
         self.resizable(width=False, height=False) # not resizable
         self.minsize(self.parent.MIN_WIDTH, self.parent.MIN_HEIGHT)
-        self.iconbitmap('assets/icon.ico')
+        self.iconbitmap(self.tracker_directory+'assets/icon.ico')
         if self.parent.settings.get("top_most", 0) == 1:
             self.attributes('-topmost', True)
         
@@ -1037,7 +1039,7 @@ class DetachedRaid(Tk.Toplevel): # detached raid window
         self.title(rname)
         self.resizable(width=False, height=False) # not resizable
         self.minsize(self.parent.MIN_WIDTH, self.parent.MIN_HEIGHT)
-        self.iconbitmap('assets/icon.ico')
+        self.iconbitmap(self.tracker_directory+'assets/icon.ico')
         self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
         if self.parent.settings.get("top_most", 0) == 1:
             self.attributes('-topmost', True)
@@ -1090,7 +1092,7 @@ class StatScreen(Tk.Toplevel): # stats window
         Tk.Toplevel.__init__(self,parent)
         self.title("GBF Loot Tracker - Statistics")
         self.resizable(width=False, height=False) # not resizable
-        self.iconbitmap('assets/icon.ico')
+        self.iconbitmap(self.tracker_directory+'assets/icon.ico')
         self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
         self.defaultfont = tkFont.nametofont('TkDefaultFont').actual() # used to make top label bold
         # base ui
@@ -1160,7 +1162,7 @@ class Editor(Tk.Toplevel): # editor window
         self.parent = parent
         Tk.Toplevel.__init__(self,parent)
         self.title("GBF Loot Tracker - Layout editor")
-        self.iconbitmap('assets/icon.ico')
+        self.iconbitmap(self.tracker_directory+'assets/icon.ico')
         self.resizable(width=False, height=False) # not resizable
         self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
         self.assets = {} # loaded images
@@ -1473,7 +1475,7 @@ class PreviewLoot(Tk.Toplevel): # preview window
         self.title("Preview")
         self.resizable(width=False, height=False) # not resizable
         self.minsize(self.parent.parent.MIN_WIDTH, self.parent.parent.MIN_HEIGHT)
-        self.iconbitmap('assets/icon.ico')
+        self.iconbitmap(self.tracker_directory+'assets/icon.ico')
         self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
         self.parent.parent.make_button(self, "", None, 0, 0, 1, "w", ("buttons", rname, self.parent.parent.BIG_THUMB))
         Tk.Label(self, text="0").grid(row=1, column=0)
@@ -1527,7 +1529,7 @@ class History(Tk.Toplevel): # history window
         self.title("History")
         self.resizable(width=False, height=False) # not resizable
         self.minsize(self.parent.MIN_WIDTH, self.parent.MIN_HEIGHT)
-        self.iconbitmap('assets/icon.ico')
+        self.iconbitmap(self.tracker_directory+'assets/icon.ico')
         self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
         self.update_history()
         if self.parent.settings.get("top_most", 0) == 1:
