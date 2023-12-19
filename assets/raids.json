@@ -130,6 +130,14 @@
                 "loot": [
                     "sand"
                 ]
+            },
+            {
+                "text": "World",
+                "raid_image": "world",
+                "loot": [
+                    "blue",
+                    "sand"
+                ]
             }
         ]
     }
