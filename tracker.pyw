@@ -974,7 +974,7 @@ class ImportDial(Tk.Toplevel):
         self.title("GBF Loot Tracker - Data Import")
         self.resizable(width=False, height=False) # not resizable
         self.minsize(self.parent.MIN_WIDTH, self.parent.MIN_HEIGHT)
-        self.iconbitmap(self.tracker_directory+'assets/icon.ico')
+        self.iconbitmap(self.parent.tracker_directory+'assets/icon.ico')
         if self.parent.settings.get("top_most", 0) == 1:
             self.attributes('-topmost', True)
         
@@ -1039,7 +1039,7 @@ class DetachedRaid(Tk.Toplevel): # detached raid window
         self.title(rname)
         self.resizable(width=False, height=False) # not resizable
         self.minsize(self.parent.MIN_WIDTH, self.parent.MIN_HEIGHT)
-        self.iconbitmap(self.tracker_directory+'assets/icon.ico')
+        self.iconbitmap(self.parent.tracker_directory+'assets/icon.ico')
         self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
         if self.parent.settings.get("top_most", 0) == 1:
             self.attributes('-topmost', True)
@@ -1092,7 +1092,7 @@ class StatScreen(Tk.Toplevel): # stats window
         Tk.Toplevel.__init__(self,parent)
         self.title("GBF Loot Tracker - Statistics")
         self.resizable(width=False, height=False) # not resizable
-        self.iconbitmap(self.tracker_directory+'assets/icon.ico')
+        self.iconbitmap(self.parent.tracker_directory+'assets/icon.ico')
         self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
         self.defaultfont = tkFont.nametofont('TkDefaultFont').actual() # used to make top label bold
         # base ui
@@ -1162,7 +1162,7 @@ class Editor(Tk.Toplevel): # editor window
         self.parent = parent
         Tk.Toplevel.__init__(self,parent)
         self.title("GBF Loot Tracker - Layout editor")
-        self.iconbitmap(self.tracker_directory+'assets/icon.ico')
+        self.iconbitmap(self.parent.tracker_directory+'assets/icon.ico')
         self.resizable(width=False, height=False) # not resizable
         self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
         self.assets = {} # loaded images
@@ -1207,7 +1207,7 @@ class Editor(Tk.Toplevel): # editor window
 
     def load_raids(self) -> list: # load raids.json
         try:
-            with open(self.tracker_directory+'assets/raids.json', mode='r', encoding='utf-8') as f:
+            with open(self.parent.tracker_directory+'assets/raids.json', mode='r', encoding='utf-8') as f:
                 return json.load(f)
         except:
             return []
@@ -1455,7 +1455,7 @@ class Editor(Tk.Toplevel): # editor window
             messagebox.showerror("Editor -Error", "Errors are present in the layout:\n"+"\n".join(errors))
             return False
         try:
-            with open(self.tracker_directory+"assets/raids.json", mode="w", encoding="utf-8") as f:
+            with open(self.parent.tracker_directory+"assets/raids.json", mode="w", encoding="utf-8") as f:
                 json.dump(self.layout, f, indent=4, ensure_ascii=False)
             self.layout_string = str(self.layout)
             if __name__ != "__main__":
@@ -1475,7 +1475,7 @@ class PreviewLoot(Tk.Toplevel): # preview window
         self.title("Preview")
         self.resizable(width=False, height=False) # not resizable
         self.minsize(self.parent.parent.MIN_WIDTH, self.parent.parent.MIN_HEIGHT)
-        self.iconbitmap(self.tracker_directory+'assets/icon.ico')
+        self.iconbitmap(self.parent.parent.tracker_directory+'assets/icon.ico')
         self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
         self.parent.parent.make_button(self, "", None, 0, 0, 1, "w", ("buttons", rname, self.parent.parent.BIG_THUMB))
         Tk.Label(self, text="0").grid(row=1, column=0)
@@ -1529,7 +1529,7 @@ class History(Tk.Toplevel): # history window
         self.title("History")
         self.resizable(width=False, height=False) # not resizable
         self.minsize(self.parent.MIN_WIDTH, self.parent.MIN_HEIGHT)
-        self.iconbitmap(self.tracker_directory+'assets/icon.ico')
+        self.iconbitmap(self.parent.tracker_directory+'assets/icon.ico')
         self.protocol("WM_DELETE_WINDOW", self.close) # call close() if we close the window
         self.update_history()
         if self.parent.settings.get("top_most", 0) == 1:
