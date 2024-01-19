@@ -23,7 +23,7 @@ class Tracker(Tk.Tk):
     RARES = ["bar", "sand", "evolite", "sunlight", "shard"] # rare item
     FORBIDDEN = ["version", "last", "settings", "history", "favorites"] # forbidden raid name list
     THEME = ["light", "dark", "forest-light", "forest-dark"] # existing themes
-    DEFAULT_LAYOUT = "[{'tab_image': 'bar', 'text': 'Bars', 'raids': [{'raid_image': 'bhl', 'text': 'BHL', 'loot': ['blue', 'ring3', 'bar']}, {'raid_image': 'akasha', 'text': 'Akasha', 'loot': ['blue', 'ring3', 'bar']}, {'raid_image': 'gohl', 'text': 'Grande', 'loot': ['blue', 'ring3', 'bar']}]}, {'tab_image': 'sand', 'text': 'Revans', 'raids': [{'raid_image': 'mugen', 'text': 'Mugen', 'loot': ['blue', 'wpn_mugen', 'wpn_mugen2', 'sand']}, {'raid_image': 'diaspora', 'text': 'Diaspora', 'loot': ['blue', 'wpn_diaspora', 'wpn_diaspora2', 'sand']}, {'raid_image': 'siegfried', 'text': 'Siegfried', 'loot': ['blue', 'wpn_siegfried', 'wpn_siegfried2', 'sand']}, {'raid_image': 'siete', 'text': 'Siete', 'loot': ['blue', 'wpn_siete', 'wpn_siete2', 'sand']}, {'raid_image': 'cosmos', 'text': 'Cosmos', 'loot': ['blue', 'wpn_cosmos', 'wpn_cosmos2', 'sand']}, {'raid_image': 'agastia', 'text': 'Agastia', 'loot': ['blue', 'wpn_agastia', 'wpn_agastia2', 'sand']}]}, {'tab_image': 'sand', 'text': 'Sands', 'raids': [{'raid_image': 'ennead', 'text': 'Enneads', 'loot': ['sand']}, {'raid_image': '6d', 'text': '6D', 'loot': ['fireearring', 'sand']}, {'raid_image': 'subaha', 'text': 'SuBaha', 'loot': ['sand']}, {'raid_image': 'hexa', 'text': 'Hexa', 'loot': ['sand']}, {'text': 'World', 'raid_image': 'world', 'loot': ['blue', 'world_idean', 'sand']}]}]"
+    DEFAULT_LAYOUT = "[{'tab_image': 'bar', 'text': 'Bars', 'raids': [{'raid_image': 'bhl', 'text': 'BHL', 'loot': ['blue', 'ring3', 'bar']}, {'raid_image': 'akasha', 'text': 'Akasha', 'loot': ['blue', 'ring3', 'bar']}, {'raid_image': 'gohl', 'text': 'Grande', 'loot': ['blue', 'ring3', 'bar']}]}, {'tab_image': 'sand', 'text': 'Sands', 'raids': [{'raid_image': 'ennead', 'text': 'Enneads', 'loot': ['sand']}, {'raid_image': '6d', 'text': '6D', 'loot': ['fireearring', 'sand']}, {'text': 'World', 'raid_image': 'world', 'loot': ['blue', 'world_idean', 'sand']}]}, {'tab_image': 'siete', 'text': 'Revans', 'raids': [{'raid_image': 'mugen', 'text': 'Mugen', 'loot': ['blue', 'wpn_mugen', 'wpn_mugen2', 'sand']}, {'raid_image': 'diaspora', 'text': 'Diaspora', 'loot': ['blue', 'wpn_diaspora', 'wpn_diaspora2', 'sand']}, {'raid_image': 'siegfried', 'text': 'Siegfried', 'loot': ['blue', 'wpn_siegfried', 'wpn_siegfried2', 'sand']}, {'raid_image': 'siete', 'text': 'Siete', 'loot': ['blue', 'wpn_siete', 'wpn_siete2', 'sand']}, {'raid_image': 'cosmos', 'text': 'Cosmos', 'loot': ['blue', 'wpn_cosmos', 'wpn_cosmos2', 'sand']}, {'raid_image': 'agastia', 'text': 'Agastia', 'loot': ['blue', 'wpn_agastia', 'wpn_agastia2', 'sand']}]}, {'text': 'End Game', 'tab_image': 'subaha', 'raids': [{'raid_image': 'subaha', 'text': 'SuBaha', 'loot': ['sand']}, {'raid_image': 'hexa', 'text': 'Hexa', 'loot': ['sand']}]}]"
     RAID_TAB_LIMIT = 6
     MIN_WIDTH = 240
     MIN_HEIGHT = 150
@@ -915,6 +915,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self) -> None: # display the changelog
         changelog = [
+            "1.58 - Modified the base layout for future end game raids. Fixed some bugs in the layout editor.",
             "1.57 - The World added to the default raid layout.",
             "1.56 - Added support for 'evolite', 'sunlight' and 'shard' drops. Interface icons have been prettied up. Tracker can now be started from the command line from another folder.",
             "1.55 - Fixed the Auto Update doing nothing.",
@@ -923,10 +924,7 @@ class Tracker(Tk.Tk):
             "1.52 - Fixed a bug and tweaked the UI of the History window.",
             "1.51 - Added History window and Save Backup setting.",
             "1.50 - Added thousand separators for big numbers. Fixed some very minor UI issues.",
-            "1.49 - Added raid thumbnails to stat screen.",
-            "1.48 - The statistics window is now more detailed.",
-            "1.47 - Raid tabs size is reduced if more than six raids are present in the same category.",
-            "1.46 - Fixed keyboard navigation not working on tabs after clicking a tab."
+            "1.49 - Added raid thumbnails to stat screen."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
@@ -1224,9 +1222,9 @@ class Editor(Tk.Toplevel): # editor window
 
     def insert_tab(self, i : Optional[int] = None) -> None: # insert a tab at given position i (if None, append)
         if i is None:
-            self.layout.append({"text":"New Tab", "tab_image":"bar"})
+            self.layout.append({"text":"New Tab", "tab_image":"bar", "raids":[]})
         else:
-            self.layout.insert(i+1, {"text":"New Tab", "tab_image":"bar"})
+            self.layout.insert(i+1, {"text":"New Tab", "tab_image":"bar", "raids":[]})
         # check if bottom frame is enabled and calculate the new index
         if self.current_selected is None:
             ti = None
@@ -1285,11 +1283,12 @@ class Editor(Tk.Toplevel): # editor window
         self.update_select(index)
 
     def move_raid_to(self, index : int, i : int) -> None: # move a raid at index i from tab index to a tab selected by the user
-        target = simpledialog.askstring("Move Raid", "Move this raid to the end of which Tab? (Input its number)")
+        target = simpledialog.askstring("Move Raid", "Move this raid to the end of which Tab? (Input its number)", parent=self)
         if target is None: return
         try:
             tid = int(target)-1
             if tid < 0 or tid >= len(self.layout): raise Exception() # input check
+            if "raids" not in self.layout[tid]: self.layout[tid]["raids"] = []
             self.layout[tid]["raids"].append(self.layout[index]["raids"][i])
             del self.layout[index]["raids"][i]
             self.update_select(index)

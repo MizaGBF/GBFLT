@@ -34,6 +34,36 @@
     },
     {
         "tab_image": "sand",
+        "text": "Sands",
+        "raids": [
+            {
+                "raid_image": "ennead",
+                "text": "Enneads",
+                "loot": [
+                    "sand"
+                ]
+            },
+            {
+                "raid_image": "6d",
+                "text": "6D",
+                "loot": [
+                    "fireearring",
+                    "sand"
+                ]
+            },
+            {
+                "text": "World",
+                "raid_image": "world",
+                "loot": [
+                    "blue",
+                    "world_idean",
+                    "sand"
+                ]
+            }
+        ]
+    },
+    {
+        "tab_image": "siete",
         "text": "Revans",
         "raids": [
             {
@@ -99,24 +129,9 @@
         ]
     },
     {
-        "tab_image": "sand",
-        "text": "Sands",
+        "text": "End Game",
+        "tab_image": "subaha",
         "raids": [
-            {
-                "raid_image": "ennead",
-                "text": "Enneads",
-                "loot": [
-                    "sand"
-                ]
-            },
-            {
-                "raid_image": "6d",
-                "text": "6D",
-                "loot": [
-                    "fireearring",
-                    "sand"
-                ]
-            },
             {
                 "raid_image": "subaha",
                 "text": "SuBaha",
@@ -128,15 +143,6 @@
                 "raid_image": "hexa",
                 "text": "Hexa",
                 "loot": [
-                    "sand"
-                ]
-            },
-            {
-                "text": "World",
-                "raid_image": "world",
-                "loot": [
-                    "blue",
-                    "world_idean",
                     "sand"
                 ]
             }
