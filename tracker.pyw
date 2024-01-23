@@ -7,7 +7,7 @@ import webbrowser
 from contextlib import contextmanager
 import subprocess
 import sys
-import zipfile
+from zipfile import ZipFile
 from io import BytesIO
 import os
 import platform
@@ -666,6 +666,8 @@ class Tracker(Tk.Tk):
         for i in range(0, min(len(me), len(te))):
             if int(me[i]) < int(te[i]):
                 return False
+            elif int(me[i]) > int(te[i]):
+                return True
         return True
 
     def check_new_update(self, silent : bool = True) -> None: # request the manifest file on github and compare the versions
@@ -699,7 +701,7 @@ class Tracker(Tk.Tk):
                 data = url.read()
             # read
             with BytesIO(data) as zip_content:
-                with zipfile.ZipFile(zip_content, 'r') as zip_ref:
+                with ZipFile(zip_content, 'r') as zip_ref:
                     # list files
                     folders = set()
                     file_list = zip_ref.namelist()
@@ -915,6 +917,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self) -> None: # display the changelog
         changelog = [
+            "1.59 - Fixed a possible bug in the auto update process.",
             "1.58 - Modified the base layout for future end game raids. Fixed some bugs in the layout editor.",
             "1.57 - The World added to the default raid layout.",
             "1.56 - Added support for 'evolite', 'sunlight' and 'shard' drops. Interface icons have been prettied up. Tracker can now be started from the command line from another folder.",
@@ -923,8 +926,7 @@ class Tracker(Tk.Tk):
             "1.53 - Removed Reset buttons on Raid Popups. Fixed Raid Popups moving slightly on reboot (To do so, the offset is calculated once on the app startup).",
             "1.52 - Fixed a bug and tweaked the UI of the History window.",
             "1.51 - Added History window and Save Backup setting.",
-            "1.50 - Added thousand separators for big numbers. Fixed some very minor UI issues.",
-            "1.49 - Added raid thumbnails to stat screen."
+            "1.50 - Added thousand separators for big numbers. Fixed some very minor UI issues."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
