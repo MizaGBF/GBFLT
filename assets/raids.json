@@ -145,6 +145,13 @@
                 "loot": [
                     "sand"
                 ]
+            },
+            {
+                "text": "LuciZero",
+                "raid_image": "lucizero",
+                "loot": [
+                    "sand"
+                ]
             }
         ]
     }
