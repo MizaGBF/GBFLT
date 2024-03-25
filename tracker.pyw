@@ -917,6 +917,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self) -> None: # display the changelog
         changelog = [
+            "1.61 - Added M3 raids.",
             "1.60 - Added Lucilius Zero.",
             "1.59 - Fixed a possible bug in the auto update process.",
             "1.58 - Modified the base layout for future end game raids. Fixed some bugs in the layout editor.",
@@ -925,8 +926,7 @@ class Tracker(Tk.Tk):
             "1.55 - Fixed the Auto Update doing nothing.",
             "1.54 - Fixed the Popup and Statistics not being updated upon using the Reset button, and the History crashing if open.",
             "1.53 - Removed Reset buttons on Raid Popups. Fixed Raid Popups moving slightly on reboot (To do so, the offset is calculated once on the app startup).",
-            "1.52 - Fixed a bug and tweaked the UI of the History window.",
-            "1.51 - Added History window and Save Backup setting."
+            "1.52 - Fixed a bug and tweaked the UI of the History window."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
