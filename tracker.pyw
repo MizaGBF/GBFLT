@@ -19,7 +19,7 @@ import calendar
 import traceback
 
 class Tracker(Tk.Tk):
-    CHESTS = ["wood", "silver", "gold", "red", "blue", "purple"] # chest list
+    CHESTS = ["wood", "silver", "gold", "red", "blue", "purple", "celestial"] # chest list
     RARES = ["bar", "sand", "evolite", "sunlight", "shard"] # rare item
     FORBIDDEN = ["version", "last", "settings", "history", "favorites"] # forbidden raid name list
     THEME = ["light", "dark", "forest-light", "forest-dark"] # existing themes
@@ -917,6 +917,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self) -> None: # display the changelog
         changelog = [
+            "1.62 - Added Celestial Chests, you can set them via the Layout Editor.",
             "1.61 - Added M3 raids.",
             "1.60 - Added Lucilius Zero.",
             "1.59 - Fixed a possible bug in the auto update process.",
@@ -925,8 +926,7 @@ class Tracker(Tk.Tk):
             "1.56 - Added support for 'evolite', 'sunlight' and 'shard' drops. Interface icons have been prettied up. Tracker can now be started from the command line from another folder.",
             "1.55 - Fixed the Auto Update doing nothing.",
             "1.54 - Fixed the Popup and Statistics not being updated upon using the Reset button, and the History crashing if open.",
-            "1.53 - Removed Reset buttons on Raid Popups. Fixed Raid Popups moving slightly on reboot (To do so, the offset is calculated once on the app startup).",
-            "1.52 - Fixed a bug and tweaked the UI of the History window."
+            "1.53 - Removed Reset buttons on Raid Popups. Fixed Raid Popups moving slightly on reboot (To do so, the offset is calculated once on the app startup)."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
