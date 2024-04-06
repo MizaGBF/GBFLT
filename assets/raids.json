@@ -136,7 +136,7 @@
         ]
     },
     {
-        "text": "End Game",
+        "text": "End",
         "tab_image": "subaha",
         "raids": [
             {
@@ -158,6 +158,21 @@
                 "raid_image": "lucizero",
                 "loot": [
                     "sand"
+                ]
+            }
+        ]
+    },
+    {
+        "text": "Others",
+        "tab_image": "unknown",
+        "raids": [
+            {
+                "text": "GW NM",
+                "raid_image": "nm",
+                "loot": [
+                    "wpn_celestial",
+                    "wpn_revenant",
+                    "summon_gw"
                 ]
             }
         ]
