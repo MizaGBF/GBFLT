@@ -18,6 +18,9 @@ from datetime import datetime
 import calendar
 import traceback
 
+if os.name == 'nt': # windows only
+    import ctypes
+
 class Tracker(Tk.Tk):
     CHESTS = ["wood", "silver", "gold", "red", "blue", "purple", "green"] # chest list
     RARES = ["bar", "sand", "evolite", "sunlight", "shard"] # rare item
@@ -55,6 +58,7 @@ class Tracker(Tk.Tk):
         self.call('source', self.tracker_directory+'assets/themes/main.tcl')
         self.call("set_theme", self.settings.get("theme", self.THEME[0]))
         self.title("GBF Loot Tracker v" + self.version)
+        if os.name == 'nt': ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('mizagbf.gbflt.v'+self.version) # for the icon to display on the task bar (Windows)
         self.iconbitmap(self.tracker_directory+'assets/icon.ico')
         self.resizable(width=False, height=False) # not resizable
         self.minsize(self.MIN_WIDTH, self.MIN_HEIGHT)
@@ -917,6 +921,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self) -> None: # display the changelog
         changelog = [
+            "1.65 - (Windows) Fixed application icon not displaying on the task bar.",
             "1.64 - Added a new tab for people to put whatever, along with a generic NM raid for Unite and Fight.",
             "1.63 - Renamed Celestial Chests to Green chests, for ease of use. Sorry for the inconvenience if you're using it.",
             "1.62 - Added Celestial Chests, you can set them via the Layout Editor.",
@@ -925,8 +930,7 @@ class Tracker(Tk.Tk):
             "1.59 - Fixed a possible bug in the auto update process.",
             "1.58 - Modified the base layout for future end game raids. Fixed some bugs in the layout editor.",
             "1.57 - The World added to the default raid layout.",
-            "1.56 - Added support for 'evolite', 'sunlight' and 'shard' drops. Interface icons have been prettied up. Tracker can now be started from the command line from another folder.",
-            "1.55 - Fixed the Auto Update doing nothing."
+            "1.56 - Added support for 'evolite', 'sunlight' and 'shard' drops. Interface icons have been prettied up. Tracker can now be started from the command line from another folder."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
