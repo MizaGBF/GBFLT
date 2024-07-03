@@ -1,8 +1,9 @@
 # Granblue Fantasy Loot Tracker  
-* GUI to track your Gold Bar and Sand Drops in [Granblue Fantasy](https://game.granbluefantasy.jp).  
+GUI written in Python to track your Gold Bar, Sand Drops and more in the game [Granblue Fantasy](https://game.granbluefantasy.jp).  
+  
 ![Tracker Preview 1](https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/preview1.png)  
   
-### Features  
+## Features  
 * Lightweight.  
 * No third-party dependencies required.  
 * No Executable. You can even open and modify the application in a notepad.  
@@ -16,20 +17,22 @@
 * and more...  
 ![Tracker Preview 2](https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/preview2.png)  
   
-### Installation  
-* You only need [Python 3](https://www.python.org/downloads/) (version 3.10 or higher) installed.  
-* New to Github? Click the Green `Code` button at the top of this page, then "Download ZIP" to download this repository.  
-* Once downloaded, right click on the `.zip` file and extract the content. You can then delete the `.zip` file.  
-* (Optional) You can delete the `.github` folder if you only plan to have a normal usage of this application.  
-* Now, go inside the newly created folder and double-click on `tracker.pyw` to see if it works. If it doesn't, check the next section.
+## Installation  
+* You only need [Python 3](https://www.python.org/downloads/) (version 3.10 or higher) installed on your computer to run `tracker.pyw`.  
   
-### Troubleshooting  
+> [!TIP]
+> New to Github? Click the Green `Code` button at the top of this page, then "Download ZIP" to download this repository.  
+> Once downloaded, right click on the `.zip` file and extract the content. You can then delete the `.zip` file.  
+> Now, go inside the newly created folder and double-click on `tracker.pyw` to see if it works. If it doesn't, check the next section.  
+> (Optional) You can delete the `.github` folder if you only plan to have a normal usage of this application.  
+  
+## Troubleshooting  
 If you downloaded this application for the first time and it doesn't run, check the following:
-1. Make sure you did extract the `.zip` properly and that you're not inside currently.
+1. Make sure you did extract the content of the `.zip` properly and that you're not inside currently.
 2. Did Windows ask you to pick an application to open the file? If yes and you picked a Python with a *rocket* on its icon: It's not Python but its launcher. Click on "More applications" then scroll down to "Search an application on this computer". Navigate to where you installed Python (probably somewhere in your `C:\` folder) and go inside. You should see a few files, including one named `pythonw.exe` (take note of the **w**). Pick this one and it should start. Make sure to make it the default application for this file so you don't have to repeat the steps above.  
 3. If it still doesn't start, go into the `assets` folder and try to run `troubleshooting.pyw`. If it doesn't run too, something is very wrong with your installation (if you have multiple Python versions installed including an old one, it might be the problem). If it runs, it should tell you what's wrong (if not, open an [Issue](https://github.com/MizaGBF/GBFLT/issues)).  
   
-### Usage  
+## Usage  
 * Simply double-click on `tracker.pyw`, assuming Python is installed correctly. If nothing happens, see the `Troubleshooting` section above.  
 * Left Click on a button to increase the counter.  
 * Right Click on a button to decrease the counter.  
@@ -38,14 +41,15 @@ If you downloaded this application for the first time and it doesn't run, check 
 * The chest buttons (if present) modify the total chest obtained. It's also modified if another item is modified.  
 * The values are saved every minute or on exit, if they have been modified.  
   
-### Update  
-Simply use the built-in Updater under the `Settings` tab.  
-If it doesn't work or if you want to manually update:  
-* Backup your `save.json` and any other files you might have modified (such as `assets/raids.json`).  
-* Download and overwrite your current GBFLT copy with the new one.  
-* Put your backed up `save.json` (and other files) back in place (overwrite, if asked).  
+## Update  
+> [!CAUTION]
+> The following can corrupt your `save.json` and `assets/raids.json` (if you modified it).  
+> Make sure to make a copy of those files.  
+
+To update, simply use the built-in Updater under the `Settings` tab.  
+If it doesn't work or if you want to manually update, repeat the Installation process, move/copy inside your backed-up `save.json` (and  `assets/raids.json` if modified), and overwrite if asked.
   
-### Keyboard Shortcuts  
+## Keyboard Shortcuts  
 * `T`: Toggle the `Always on top` settings.  
 * `S`: Toggle the Statistics window.  
 * `L`: Toggle the Light and Dark themes.  
@@ -61,25 +65,33 @@ If it doesn't work or if you want to manually update:
 * `Left`: Go to the raid on the left.  
 * `Right`: Go to the raid on the right.  
 * `Shit+F1~F12`: Set the current raid to the Function Key pressed.  
-* `F1~F12`: Go to the raid associated to this Function key.  
+* `F1~F12`: Go to the raid associated to this Function key.
+
+You can find a list of those shortcuts under `Settings` and then `Shortcut List`.  
   
-### Support  
+## Support  
 Just drop a star on the top right corner of this page if you want to show your support.  
-If you have ideas that you want to implement or suggest, you can open a pull request for the former (see below) or open an issue for the later.  
   
-### Pull Request  
+## Bug report  
+Simply open an [Issue](https://github.com/MizaGBF/GBFLT/issues) or contact me.  
+  
+## Pull Request  
 If you wish to implement yourself new features, you can.  
 I won't explain to you how to use Git to fork, make a pull request and so on.  
-Just know that I'll refuse the following:  
-* Changes requiring a third party dependency (I want to keep the installation process user friendly).  
-* Changes to the default `assets/raids.json` file, unless it's to add a recently released raid (But you can expect me to do it myself if I'm still active).  
+> [!IMPORTANT]  
+> The following pull requests will be refused:  
+> Changes requiring a third party dependency.  
+> Changes to the default `assets/raids.json` file.  
   
-### Customization  
+## Customization  
+> [!CAUTION]
+> The following can corrupt your `save.json` and `assets/raids.json` (if you modified it).  
+> Make sure to make a copy of those files.
+  
 The layout is fully editable.  
-Before starting, I recommend to copy/backup `save.json` and `assets/raids.json`, in case you make a very big mistake.  
 There are two ways to edit the `assets/raids.json` files:  
   
-- **The Easier Way:**  
+### The Easier Way:  
   
 Under the `settings` tab of the tracker, press the button `Layout Editor` to open an interface allowing you to edit `assets/raids.json`. Alternatively, press the `E` key on your keyboard.  
 ![Editor Preview](https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/preview3.png)  
@@ -91,9 +103,11 @@ Under the `settings` tab of the tracker, press the button `Layout Editor` to ope
 - You can use the 'eye' button near the loot list to check how the raid will look like. If there is a problem, a 'warning' button will be present in the preview. Press it to see the list of issues.  
   
 Once you're done, click on `Save changes to 'raids.json'` at the top. If errors occured, fix what you did wrong. If no errors occured, (re)start `tracker.pyw` to check how your changes look.  
-Contact me or open an issue if you find bugs.  
   
-- **The Harder Way:**  
+### The Harder Way:  
+> [!WARNING]  
+> The following isn't recommended, the built-in Layout Editor is good enough nowadays.  
+> Those instructions are here mostly for documentation purpose.  
   
 Open `assets/raids.json` in a text editor. The Windows Notepad can work or something better. You can also try an [Online JSON Editor](https://jsoneditoronline.org/).  
   
@@ -116,10 +130,13 @@ Images must have the following format:
 Looking for a particular boss icon? Check out [GBFAL](https://mizagbf.github.io/GBFAL/), then make sure to resize the image.  
 Other sizes will work but might not look nice.  
   
-### Further Modding  
+## Further Modding  
+> [!CAUTION]  
+> Again, before attempting to follow any of those instructions, make sure to backup any file that you are worried to mess up irremediably.
+  
 If you want to add a visual theme, you have to modify the following:
 - Add your theme to `assets\themes\main.tcl` to redirect it to your TCL file.  
-- Edit `tracker.pyw` (line 25 on the current version) and add your theme to the rotation.  
+- Edit `tracker.pyw` (line 25 on the current version) and add your theme to the rotation.
   
 If you need to edit `save.json`, the file is structured this way (for version `1.53` at the time of this writing):
 - An object containing:
