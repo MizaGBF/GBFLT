@@ -66,6 +66,14 @@
                     "world_idean",
                     "sand"
                 ]
+            },
+            {
+                "text": "Paragon",
+                "raid_image": "paragon",
+                "loot": [
+                    "blue",
+                    "sand"
+                ]
             }
         ]
     },
