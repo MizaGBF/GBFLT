@@ -66,14 +66,6 @@
                     "world_idean",
                     "sand"
                 ]
-            },
-            {
-                "text": "Paragon",
-                "raid_image": "paragon",
-                "loot": [
-                    "blue",
-                    "sand"
-                ]
             }
         ]
     },
@@ -138,6 +130,28 @@
                     "blue",
                     "wpn_agastia",
                     "wpn_agastia2",
+                    "sand"
+                ]
+            }
+        ]
+    },
+    {
+        "text": "Trials",
+        "tab_image": "paragon",
+        "raids": [
+            {
+                "text": "Paragon",
+                "raid_image": "paragon",
+                "loot": [
+                    "blue",
+                    "sand"
+                ]
+            },
+            {
+                "text": "Witch",
+                "raid_image": "witch",
+                "loot": [
+                    "blue",
                     "sand"
                 ]
             }

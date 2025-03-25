@@ -26,7 +26,7 @@ class Tracker(Tk.Tk):
     RARES = ["bar", "sand", "evolite", "sunlight", "shard"] # rare item
     FORBIDDEN = ["version", "last", "settings", "history", "favorites"] # forbidden raid name list
     THEME = ["light", "dark", "forest-light", "forest-dark"] # existing themes
-    DEFAULT_LAYOUT = "[{'tab_image': 'bar', 'text': 'Bars', 'raids': [{'raid_image': 'bhl', 'text': 'BHL', 'loot': ['blue', 'ring3', 'bar']}, {'raid_image': 'akasha', 'text': 'Akasha', 'loot': ['blue', 'ring3', 'bar']}, {'raid_image': 'gohl', 'text': 'Grande', 'loot': ['blue', 'ring3', 'bar']}]}, {'tab_image': 'sand', 'text': 'Sands', 'raids': [{'raid_image': 'ennead', 'text': 'Enneads', 'loot': ['sand']}, {'text': 'M3', 'raid_image': 'm3', 'loot': ['sand']}, {'raid_image': '6d', 'text': '6D', 'loot': ['fireearring', 'sand']}, {'text': 'World', 'raid_image': 'world', 'loot': ['blue', 'world_idean', 'sand']}, {'text': 'Paragon', 'raid_image': 'paragon', 'loot': ['blue', 'sand']}]}, {'tab_image': 'siete', 'text': 'Revans', 'raids': [{'raid_image': 'mugen', 'text': 'Mugen', 'loot': ['blue', 'wpn_mugen', 'wpn_mugen2', 'sand']}, {'raid_image': 'diaspora', 'text': 'Diaspora', 'loot': ['blue', 'wpn_diaspora', 'wpn_diaspora2', 'sand']}, {'raid_image': 'siegfried', 'text': 'Siegfried', 'loot': ['blue', 'wpn_siegfried', 'wpn_siegfried2', 'sand']}, {'raid_image': 'siete', 'text': 'Siete', 'loot': ['blue', 'wpn_siete', 'wpn_siete2', 'sand']}, {'raid_image': 'cosmos', 'text': 'Cosmos', 'loot': ['blue', 'wpn_cosmos', 'wpn_cosmos2', 'sand']}, {'raid_image': 'agastia', 'text': 'Agastia', 'loot': ['blue', 'wpn_agastia', 'wpn_agastia2', 'sand']}]}, {'text': 'End', 'tab_image': 'subaha', 'raids': [{'raid_image': 'subaha', 'text': 'SuBaha', 'loot': ['sand']}, {'raid_image': 'hexa', 'text': 'Hexa', 'loot': ['sand']}, {'text': 'LuciZero', 'raid_image': 'lucizero', 'loot': ['sand']}]}, {'text': 'Others', 'tab_image': 'unknown', 'raids': [{'text': 'GW NM', 'raid_image': 'nm', 'loot': ['wpn_celestial', 'wpn_revenant', 'summon_gw']}]}]"
+    DEFAULT_LAYOUT = "[{'tab_image': 'bar', 'text': 'Bars', 'raids': [{'raid_image': 'bhl', 'text': 'BHL', 'loot': ['blue', 'ring3', 'bar']}, {'raid_image': 'akasha', 'text': 'Akasha', 'loot': ['blue', 'ring3', 'bar']}, {'raid_image': 'gohl', 'text': 'Grande', 'loot': ['blue', 'ring3', 'bar']}]}, {'tab_image': 'sand', 'text': 'Sands', 'raids': [{'raid_image': 'ennead', 'text': 'Enneads', 'loot': ['sand']}, {'text': 'M3', 'raid_image': 'm3', 'loot': ['sand']}, {'raid_image': '6d', 'text': '6D', 'loot': ['fireearring', 'sand']}, {'text': 'World', 'raid_image': 'world', 'loot': ['blue', 'world_idean', 'sand']}]}, {'tab_image': 'siete', 'text': 'Revans', 'raids': [{'raid_image': 'mugen', 'text': 'Mugen', 'loot': ['blue', 'wpn_mugen', 'wpn_mugen2', 'sand']}, {'raid_image': 'diaspora', 'text': 'Diaspora', 'loot': ['blue', 'wpn_diaspora', 'wpn_diaspora2', 'sand']}, {'raid_image': 'siegfried', 'text': 'Siegfried', 'loot': ['blue', 'wpn_siegfried', 'wpn_siegfried2', 'sand']}, {'raid_image': 'siete', 'text': 'Siete', 'loot': ['blue', 'wpn_siete', 'wpn_siete2', 'sand']}, {'raid_image': 'cosmos', 'text': 'Cosmos', 'loot': ['blue', 'wpn_cosmos', 'wpn_cosmos2', 'sand']}, {'raid_image': 'agastia', 'text': 'Agastia', 'loot': ['blue', 'wpn_agastia', 'wpn_agastia2', 'sand']}]}, {'text': 'Trials', 'tab_image': 'paragon', 'raids': [{'text': 'Paragon', 'raid_image': 'paragon', 'loot': ['blue', 'sand']}, {'text': 'Witch', 'raid_image': 'witch', 'loot': ['blue', 'sand']}]}, {'text': 'End', 'tab_image': 'subaha', 'raids': [{'raid_image': 'subaha', 'text': 'SuBaha', 'loot': ['sand']}, {'raid_image': 'hexa', 'text': 'Hexa', 'loot': ['sand']}, {'text': 'LuciZero', 'raid_image': 'lucizero', 'loot': ['sand']}]}, {'text': 'Others', 'tab_image': 'unknown', 'raids': [{'text': 'GW NM', 'raid_image': 'nm', 'loot': ['wpn_celestial', 'wpn_revenant', 'summon_gw']}]}]"
     RAID_TAB_LIMIT = 6
     MIN_WIDTH = 240
     MIN_HEIGHT = 150
@@ -109,7 +109,7 @@ class Tracker(Tk.Tk):
             raid_tabs.pack(expand=1, fill="both")
         # settings
         tab = ttk.Frame(self.top_tab)
-        self.top_tab.add(tab, text="Settings")
+        self.top_tab.add(tab)
         self.top_tab.tab(tab, image=self.load_asset("assets/others/settings.png", self.SMALL_THUMB), compound=Tk.LEFT)
         self.make_button(tab, "Toggle Theme", self.toggle_theme, 0, 0, 3, "we", ("others", "theme", self.SMALL_THUMB))
         self.make_button(tab, "Layout Editor  ", self.open_layout_editor, 1, 0, 3, "we", ("others", "layout", self.SMALL_THUMB))
@@ -921,6 +921,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self) -> None: # display the changelog
         changelog = [
+            "1.67 - Created a tab for Trial raids. Redesigned the Settings tab icon.",
             "1.66 - Added Venerable Paragon raid in the sand tab.",
             "1.65 - (Windows) Fixed application icon not displaying on the task bar.",
             "1.64 - Added a new tab for people to put whatever, along with a generic NM raid for Unite and Fight.",
@@ -930,7 +931,6 @@ class Tracker(Tk.Tk):
             "1.60 - Added Lucilius Zero.",
             "1.59 - Fixed a possible bug in the auto update process.",
             "1.58 - Modified the base layout for future end game raids. Fixed some bugs in the layout editor.",
-            "1.57 - The World added to the default raid layout."
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
