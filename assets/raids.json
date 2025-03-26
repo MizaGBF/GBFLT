@@ -152,7 +152,8 @@
                 "raid_image": "witch",
                 "loot": [
                     "blue",
-                    "sand"
+                    "sand",
+                    "witch_manatura"
                 ]
             }
         ]
