@@ -190,6 +190,13 @@
                 "loot": [
                     "sand"
                 ]
+            },
+            {
+                "text": "Versusia",
+                "raid_image": "versusia",
+                "loot": [
+                    "sand"
+                ]
             }
         ]
     },
