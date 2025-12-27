@@ -51,6 +51,13 @@
                 ]
             },
             {
+                "text": "Taboo",
+                "raid_image": "taboo",
+                "loot": [
+                    "sand"
+                ]
+            },
+            {
                 "raid_image": "6d",
                 "text": "6D",
                 "loot": [
