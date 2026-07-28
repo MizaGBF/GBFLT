@@ -73,6 +73,14 @@
                     "world_idean",
                     "sand"
                 ]
+            },
+            {
+                "text": "Taboo HL",
+                "raid_image": "nihu",
+                "loot": [
+                    "blue",
+                    "sand"
+                ]
             }
         ]
     },

@@ -921,6 +921,7 @@ class Tracker(Tk.Tk):
 
     def show_changelog(self) -> None: # display the changelog
         changelog = [
+            "1.72 - Added Taboo HL raids.",
             "1.71 - Added Taboo raids.",
             "1.70 - Added the Versusia Genesis raid.",
             "1.69 - Added the Phantasmal Performer raid.",
@@ -931,7 +932,6 @@ class Tracker(Tk.Tk):
             "1.64 - Added a new tab for people to put whatever, along with a generic NM raid for Unite and Fight.",
             "1.63 - Renamed Celestial Chests to Green chests, for ease of use. Sorry for the inconvenience if you're using it.",
             "1.62 - Added Celestial Chests, you can set them via the Layout Editor.",
-            "1.61 - Added M3 raids.",
         ]
         messagebox.showinfo("Changelog - Last Ten versions", "\n".join(changelog))
 
