@@ -1,6 +1,20 @@
 from tkinter import messagebox
 import sys
 import json
+import os
+
+if os.name == 'nt': # windows only
+    try: # Install Manager fix
+        cwd = os.getcwd()
+        system32_path = os.path.abspath(
+            os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32")
+        )
+        if os.path.normcase(cwd) == os.path.normcase(system32_path):
+            script_dir = os.path.abspath(os.path.dirname(__file__))
+            if os.path.normcase(cwd) != os.path.normcase(script_dir):
+                os.chdir(script_dir)
+    except:
+        pass
 
 err_report = ""
 try:
