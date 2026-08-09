@@ -1,6 +1,10 @@
 # Granblue Fantasy Loot Tracker  
 GUI written in Python to track your Gold Bar, Sand Drops and more in the game [Granblue Fantasy](https://game.granbluefantasy.jp).  
   
+> [!WARNING]
+> GBFLT is still maintained but consider it on life-support.  
+> I recommend using the more convenient [gbfdrop](https://gbfdrop.jp/) instead.  
+  
 ![Tracker Preview 1](https://raw.githubusercontent.com/MizaGBF/GBFLT/main/assets/preview1.png)  
   
 ## Features  
